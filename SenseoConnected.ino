@@ -1,31 +1,10 @@
 
-// circuit pin definitions
-const int ocPressLeftPin = D1;
-const int ocPressRightPin = D2;
-const int ocPressPowerPin = D5;
-const int cupDetectorPin = D6;
-const int ocSenseLedPin = D7;
-const int beeperPin = D8;
+#include "SenseoLed.h"
+#include "config.h"
 
-//variables needed for Senseo LED sensing state machine
-bool ledChanged = false;
-unsigned long ledChangeMillis, prevLedChangeMillis;
-//Senseo LED characteristic values for state machine
-//You can measure your timings by activating debugging in ledChangedRoutine()
-const int pulseDurLedSlow = 1000;                   // duration of one pulse when LED is blinking slow in milliseconds (state LED_SLOW)
-const int pulseDurLedFast = 100;                    // duration of one pulse when LED is blinking fast in milliseconds (state LED_FAST) 
-const int pulseDurTolerance = 10;                   // tolerance for pulse duration. With the tested senseo, tolerance was not more than +-1ms 
-const int pulseContThreshold = 2 * pulseDurLedSlow; // time before switching to continuous LED state (state LED_ON and state LED_OFF)
-
-enum ledStateEnum {
-  LED_unknown,
-  LED_OFF,
-  LED_SLOW,
-  LED_FAST,
-  LED_ON
-};
-ledStateEnum ledState = LED_unknown;
-ledStateEnum prevLedState = LED_unknown;
+SenseoLed senseoLed(ocSenseLedPin);
+ledStateEnum ledState = LED_unknown; 
+ledStateEnum prevLedState = LED_unknown; 
 
 enum senseoStateEnum {
   SENSEO_unknown,
@@ -41,6 +20,7 @@ senseoStateEnum prevSenseoState = SENSEO_unknown;
 unsigned long senseoStateLastChangeMillis;
 const int senseoHeatingTime = 40; //in seconds
 const int senseoTimingTolerance = 10; //in seconds
+
 
 void setup() {
   Serial.begin(9600);
@@ -66,11 +46,10 @@ void loop() {
   // activate this to test your circuit and Senseo connections
   //testIO();
   
-  prevLedState = ledState;
-  updateLedState();
-  if (ledState != prevLedState) {
+  senseoLed.updateState();
+  if (senseoLed.hasChanged()) {
     Serial.print("LED state machine, new LED state: ");
-    Serial.println(ledStateToString(ledState));
+    Serial.println(senseoLed.getStateAsString());
   }
 
   prevSenseoState = senseoState;
@@ -87,38 +66,11 @@ void loop() {
 
 
 void ledChangedRoutine() {
-  prevLedChangeMillis = ledChangeMillis;
-  ledChangeMillis = millis();
-  ledChanged = true;
+  senseoLed.setLedChangedAt(millis());
   
   // Debugging and Setup: Uncomment the following to get LED pulse durations
-  //Serial.print("LED pulse duration: ");
-  //Serial.println(ledChangeMillis - prevLedChangeMillis);
-}
-
-
-void updateLedState() {
-  if (ledChanged) {
-    // When there was an interrupt from the Senseo LED pin
-    int pulseDuration = ledChangeMillis - prevLedChangeMillis;
-    // decide if LED is blinking fast or slow
-    if (abs(pulseDuration - pulseDurLedFast) < pulseDurTolerance) {
-        ledState = LED_FAST;
-    } else if (abs(pulseDuration - pulseDurLedSlow) < pulseDurTolerance) {
-        ledState = LED_SLOW;
-    } else {
-      // Nothing to do here.
-      // pulseDuration could be below (user interaction) or above (end of a continuous state) the known times. 
-      // No actions needed.
-    }
-    ledChanged = false;
-  }
-  
-  // decide if LED is not blinking but in a continuous state
-  int t = millis() - ledChangeMillis;
-  if (( t > pulseContThreshold) && (t < 2 * pulseContThreshold)) {
-    ledState = !digitalRead(ocSenseLedPin) ? LED_ON : LED_OFF;
-  }
+  Serial.print("LED pulse duration: ");
+  Serial.println(senseoLed.getLastPulseDuration());
 }
 
 
@@ -172,14 +124,6 @@ void updateSenseoState() {
   }
 }
 
-
-String ledStateToString(ledStateEnum state) {
-  if (state == LED_OFF) return "LED_OFF";
-  else if (state == LED_SLOW) return "LED_SLOW";
-  else if (state == LED_FAST) return "LED_FAST";
-  else if (state == LED_ON) return "LED_ON";
-  else return "LED_unknown";
-}
 
 String senseoStateToString(senseoStateEnum state) {
   if (state == SENSEO_OFF) return "SENSEO_OFF";
