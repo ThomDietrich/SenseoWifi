@@ -16,6 +16,7 @@ class SenseoSM
     SenseoSM();
     void updateState(ledStateEnum ledState);
     bool stateHasChanged();
+    senseoStateEnum getState();
     String getStateAsString();
     int getTimeInLastState();
   private:

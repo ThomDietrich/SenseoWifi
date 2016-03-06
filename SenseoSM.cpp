@@ -83,6 +83,10 @@ int SenseoSM::getTimeInLastState() {
 }
 
 
+senseoStateEnum SenseoSM::getState() {
+  return senseoState;
+}
+
 String SenseoSM::getStateAsString() {
   if (senseoState == SENSEO_OFF) return "SENSEO_OFF";
   else if (senseoState == SENSEO_HEATING) return "SENSEO_HEATING";

@@ -14,6 +14,7 @@ const int ocPressPowerPin = D5;
 const int cupDetectorPin = D6;
 const int ocSenseLedPin = D7;
 const int beeperPin = D8;
+const int cupDetectorAnalogPin = A0;
 
 //characteristic values for LED state machine
 //You can measure your timings by activating debugging in ledChangedRoutine()
@@ -23,7 +24,7 @@ const int pulseDurTolerance = 10;                   // tolerance for pulse durat
 const int pulseContThreshold = 2 * pulseDurLedSlow; // time before switching to continuous LED state (state LED_ON and state LED_OFF)
 
 //characteristic values for Senseo state machine
-const int HeatingTime = 40;           //in seconds
+const int HeatingTime = 60;           //in seconds
 const int HeatingTimeTol = 10;        //in seconds
 const int BrewingTimeOneCup = 55;     //in seconds
 const int BrewingTimeTwoCup = 85;     //in seconds
