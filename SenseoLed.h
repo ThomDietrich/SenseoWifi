@@ -8,20 +8,13 @@
 
 #include "Arduino.h"
 #include "config.h"
-
-enum ledStateEnum {
-  LED_unknown,
-  LED_OFF,
-  LED_SLOW,
-  LED_FAST,
-  LED_ON
-};
+#include "enums.h"
 
 class SenseoLed
 {
   public:
     SenseoLed(int ledPin);
-    void setLedChangedAt(unsigned long ms);
+    void pinStateToggled();
     int getLastPulseDuration();
     void updateState();
     bool hasChanged();

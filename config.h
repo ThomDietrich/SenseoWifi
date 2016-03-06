@@ -4,6 +4,8 @@
   Released under some license.
 */
 
+#ifndef SenseoConfig_h
+#define SenseoConfig_h
 
 // circuit pin definitions
 const int ocPressLeftPin = D1;
@@ -26,3 +28,4 @@ const int HeatingTimeTol = 10;        //in seconds
 const int BrewingTimeOneCup = 55;     //in seconds
 const int BrewingTimeTwoCup = 85;     //in seconds
 
+#endif

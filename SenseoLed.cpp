@@ -12,28 +12,27 @@ SenseoLed::SenseoLed(int ledPin)
 }
 
 
-void SenseoLed::setLedChangedAt(unsigned long ms) {
+void SenseoLed::pinStateToggled() {
   prevLedChangeMillis = ledChangeMillis;
-  ledChangeMillis = ms;
+  ledChangeMillis = millis();
   ledChanged = true;
 }
 
 
 int SenseoLed::getLastPulseDuration() {
-  return ledChangeMillis - prevLedChangeMillis;
+  return (ledChangeMillis - prevLedChangeMillis);
 }
 
 
 void SenseoLed::updateState() {
+  ledStatePrev = ledState;
   if (ledChanged) {
     // When there was an interrupt from the Senseo LED pin
     int pulseDuration = ledChangeMillis - prevLedChangeMillis;
     // decide if LED is blinking fast or slow
     if (abs(pulseDuration - pulseDurLedFast) < pulseDurTolerance) {
-        ledStatePrev = ledState;
         ledState = LED_FAST;
     } else if (abs(pulseDuration - pulseDurLedSlow) < pulseDurTolerance) {
-        ledStatePrev = ledState;
         ledState = LED_SLOW;
     } else {
       // Nothing to do here.
@@ -43,9 +42,8 @@ void SenseoLed::updateState() {
     ledChanged = false;
   }
   // decide if LED is not blinking but in a continuous state
-  int t = millis() - ledChangeMillis;
+  int t = (unsigned long)(millis() - ledChangeMillis);
   if (( t > pulseContThreshold) && (t < 2 * pulseContThreshold)) {
-    ledStatePrev = ledState;
     ledState = !digitalRead(ocSenseLedPin) ? LED_ON : LED_OFF;
   }
 }
