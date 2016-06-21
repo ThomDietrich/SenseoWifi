@@ -9,6 +9,7 @@
 SenseoLed::SenseoLed(int ledPin)
 {
   ocSenseLedPin = ledPin;
+  ledChangeMillis = millis();
 }
 
 
@@ -43,7 +44,7 @@ void SenseoLed::updateState() {
   }
   // decide if LED is not blinking but in a continuous state
   int t = (unsigned long)(millis() - ledChangeMillis);
-  if (( t > pulseContThreshold) && (t < 2 * pulseContThreshold)) {
+  if (( t > pulseContThreshold) && (t < 3 * pulseContThreshold)) {
     ledState = !digitalRead(ocSenseLedPin) ? LED_ON : LED_OFF;
   }
 }

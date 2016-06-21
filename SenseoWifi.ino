@@ -1,23 +1,26 @@
 /*
-  SenseoConnected.ino - base file for the SenseoWifi project.
+  SenseoWifi.ino - base file for the SenseoWifi project.
   Created by Thomas Dietrich, 2016-03-05.
   Released under some license.
 */
 
 #include "SenseoLed.h"
 #include "SenseoSM.h"
+#include "SenseoControl.h"
 #include "Cup.h"
-#include "config.h"
+#include "pins.h"
+#include "constants.h"
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
 SenseoLed mySenseoLed(ocSenseLedPin);
 SenseoSM mySenseoSM;
-Cup cup(cupDetectorPin, beeperPin);
+Cup myCup(cupDetectorPin, beeperPin);
+SenseoControl myControl(ocPressPowerPin, ocPressLeftPin, ocPressRightPin);
 
-const char *ssid =  "xxxxxxxxxx";    // cannot be longer than 32 characters!
-const char *pass =  "xxxxxxxxxx";   //
+const char *WifiSsid = "AWF1877zh";    // cannot be longer than 32 characters!
+const char *WifiPass = "nurzen010!";   //
 IPAddress server(85, 119, 83, 194);
 
 WiFiClient wclient;
@@ -35,13 +38,10 @@ void ledChangedRoutine() {
 
 void cupDetectorRoutine() {
   //debounce!?
-  cup.updateState();
+  myCup.updateState();
   //Serial.print("Cup Detector: ");
-  //Serial.println(cup.getState());
+  //Serial.println(myCup.getState());
 }
-
-
-String subMsg = "";
 
 void callback(const MQTT::Publish& pub) {
   //Serial.print(pub.topic());
@@ -49,7 +49,7 @@ void callback(const MQTT::Publish& pub) {
   if (pub.has_stream()) {
     Serial.println("(too long)");
   } else
-    subMsg = pub.payload_string();
+    myControl.setMqttMessage(pub.payload_string());
   //Serial.println(pub.payload_string());
 }
 
@@ -57,22 +57,22 @@ void callback(const MQTT::Publish& pub) {
 void WiFiMQTTConnect() {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.print("Connecting to ");
-    Serial.print(ssid);
+    Serial.print(WifiSsid);
     Serial.println("...");
-    WiFi.begin(ssid, pass);
+    WiFi.begin(WifiSsid, WifiPass);
 
     if (WiFi.waitForConnectResult() != WL_CONNECTED)
       return;
     Serial.println("WiFi connected");
   }
-  
+
   if (WiFi.status() == WL_CONNECTED) {
     if (!client.connected()) {
       if (client.connect("arduinoClient")) {
-        Serial.println("Connected to MQTT server");
+        //Serial.println("Connected to MQTT server");
         client.set_callback(callback);
-        client.publish("SenseoConnected/w66a/msg", "Senseo Connected! :)");
-        client.subscribe("SenseoConnected/w66a/command");
+        client.publish("SenseoWifi/w66a/msg", "Senseo Connected! :)");
+        client.subscribe("SenseoWifi/w66a/command");
       }
     }
     if (client.connected()) client.loop();
@@ -163,19 +163,23 @@ void loop() {
 
   mySenseoSM.updateState(mySenseoLed.getState());
   if (mySenseoSM.stateHasChanged()) {
+    Serial.print("(time in last state: ");
+    Serial.print(mySenseoSM.getTimeInLastState());
+    Serial.print("s)\n");
     Serial.print("Senseo state machine, new Senseo state: ");
     Serial.print(mySenseoSM.getStateAsString());
-    Serial.print(" (time in old state: ");
-    Serial.print(mySenseoSM.getTimeInLastState());
-    Serial.print("s)\n\n");
+    Serial.print("\n\n");
   }
 
   if (mySenseoSM.stateHasChanged()) {
     String s = "in last state: ";
-    client.publish("SenseoConnected/w66a/time", s + mySenseoSM.getTimeInLastState());
-    client.publish("SenseoConnected/w66a/state", mySenseoSM.getStateAsString());
+    client.publish("SenseoWifi/w66a/time", s + mySenseoSM.getTimeInLastState());
+    client.publish("SenseoWifi/w66a/state", mySenseoSM.getStateAsString());
   }
 
+  //TODO:
+  // Publish Senseo state every x minutes
+    
   if (mySenseoSM.stateHasChanged()) {
     if (mySenseoSM.getState() == SENSEO_READY) {
       tone(beeperPin, 1024, 500);
@@ -185,46 +189,14 @@ void loop() {
     }
   }
 
-  if (subMsg != "") {
-    Serial.print("Nachricht: ");
-    Serial.println(subMsg);
-    if (subMsg == "ON") {
-      if (mySenseoSM.getState() == SENSEO_OFF) {
-        digitalWrite(ocPressPowerPin, HIGH);
-        delay(100);
-        Serial.println("MQTT: command accepted");
-        client.publish("SenseoConnected/w66a/response", "accepted");
-        digitalWrite(ocPressPowerPin, LOW);
-      }
-    } else if (subMsg == "OFF") {
-      if (mySenseoSM.getState() != SENSEO_OFF) {
-        digitalWrite(ocPressPowerPin, HIGH);
-        delay(100);
-        Serial.println("MQTT: command accepted");
-        client.publish("SenseoConnected/w66a/response", "accepted");
-        digitalWrite(ocPressPowerPin, LOW);
-      }
-    } else if (subMsg == "1-cup") {
-      if (mySenseoSM.getState() == SENSEO_READY) {
-        digitalWrite(ocPressLeftPin, HIGH);
-        delay(100);
-        Serial.println("MQTT: command accepted");
-        client.publish("SenseoConnected/w66a/response", "accepted");
-        digitalWrite(ocPressLeftPin, LOW);
-      }
-    } else if (subMsg == "2-cup") {
-      if (mySenseoSM.getState() == SENSEO_READY) {
-        digitalWrite(ocPressRightPin, HIGH);
-        delay(100);
-        digitalWrite(ocPressRightPin, LOW);
-        Serial.println("MQTT: command accepted");
-        client.publish("SenseoConnected/w66a/response", "accepted");
-      }
+  if (myControl.hasMqttMsg()) {
+    if (myControl.reactOnMqttMsg(mySenseoSM.getState())) {
+      Serial.println("MQTT: command accepted");
+      client.publish("SenseoWifi/w66a/response", "command accepted");
     } else {
       Serial.println("MQTT: unknown command");
-      client.publish("SenseoConnected/w66a/response", (String)("unknown command" + subMsg));
+      client.publish("SenseoWifi/w66a/response", "unknown command");
     }
-    subMsg = "";
   }
 }
 

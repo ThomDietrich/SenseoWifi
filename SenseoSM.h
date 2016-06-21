@@ -7,8 +7,8 @@
 #define SenseoSM_h
 
 #include "Arduino.h"
-#include "config.h"
 #include "enums.h"
+#include "constants.h"
 
 class SenseoSM
 {

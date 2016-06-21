@@ -7,8 +7,8 @@
 #define SenseoLed_h
 
 #include "Arduino.h"
-#include "config.h"
 #include "enums.h"
+#include "constants.h"
 
 class SenseoLed
 {
@@ -23,7 +23,7 @@ class SenseoLed
   private:
     int ocSenseLedPin;
     bool ledChanged = false;
-    unsigned long ledChangeMillis = 0;
+    unsigned long ledChangeMillis;
     unsigned long prevLedChangeMillis = 0;
     ledStateEnum ledState = LED_unknown;
     ledStateEnum ledStatePrev = LED_unknown;
