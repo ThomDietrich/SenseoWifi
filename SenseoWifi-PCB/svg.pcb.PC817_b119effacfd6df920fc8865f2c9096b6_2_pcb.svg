@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<svg xmlns="http://www.w3.org/2000/svg"  version="1.2" height="18.117138" viewBox="0 0 408.02651 201.30154" width="36.722385">
+    <desc >
+        <referenceFile >Optocoupler_TLP621_pcb.svg</referenceFile>
+    </desc>
+    <desc id="desc3021" >Fritzing footprint SVG</desc>
+    <g transform="matrix(0.97985698,0,0,0.59109975,2.2718976,6.0756595)" >
+        <g >
+            <g gorn="0.2.0.0" id="silkscreen" >
+                <line gorn="0.2.0.0.0" style="stroke:#ffffff;stroke-width:10" x2="10" id="line3024"  x1="10" y1="10" y2="310"/>
+                <line gorn="0.2.0.0.1" style="stroke:#ffffff;stroke-width:10" x2="410" id="line3026"  x1="10" y1="310" y2="310"/>
+                <line gorn="0.2.0.0.2" style="stroke:#ffffff;stroke-width:10" x2="410" id="line3028"  x1="410" y1="310" y2="10"/>
+                <line gorn="0.2.0.0.3" style="stroke:#ffffff;stroke-width:10" x2="160" id="line3030"  x1="10" y1="10" y2="10"/>
+                <line gorn="0.2.0.0.4" style="stroke:#ffffff;stroke-width:10" x2="410" id="line3032"  x1="260" y1="10" y2="10"/>
+            </g>
+        </g>
+    </g>
+    <g transform="translate(-5.9867419,-5.9867406)" >
+        <g >
+            <g gorn="0.3.0.0" id="copper1" >
+                <g gorn="0.3.0.0.0" id="copper0" >
+                    <rect gorn="0.3.0.0.0.0" style="fill:none;stroke:#ffbf00;stroke-width:20" id="rect3036"  height="55" x="32.5" y="32.5" width="55"/>
+                    <circle gorn="0.3.0.0.0.1" style="fill:none;stroke:#ffbf00;stroke-width:20" cx="60" cy="60" id="connector0pin"  r="27.5" d="M 87.5,60 C 87.5,75.187831 75.187831,87.5 60,87.5 44.812169,87.5 32.5,75.187831 32.5,60 32.5,44.812169 44.812169,32.5 60,32.5 75.187831,32.5 87.5,44.812169 87.5,60 z"/>
+                    <circle gorn="0.3.0.0.0.2" style="fill:none;stroke:#ffbf00;stroke-width:20" cx="360" cy="60" id="connector3pin"  r="27.5" d="m 387.5,60 c 0,15.187831 -12.31217,27.5 -27.5,27.5 -15.18783,0 -27.5,-12.312169 -27.5,-27.5 0,-15.187831 12.31217,-27.5 27.5,-27.5 15.18783,0 27.5,12.312169 27.5,27.5 z"/>
+                    <circle gorn="0.3.0.0.0.3" style="fill:none;stroke:#ffbf00;stroke-width:20" cx="60" cy="160" id="connector1pin"  r="27.5" d="m 87.5,160 c 0,15.18783 -12.312169,27.5 -27.5,27.5 -15.187831,0 -27.5,-12.31217 -27.5,-27.5 0,-15.18783 12.312169,-27.5 27.5,-27.5 15.187831,0 27.5,12.31217 27.5,27.5 z"/>
+                    <circle gorn="0.3.0.0.0.4" style="fill:none;stroke:#ffbf00;stroke-width:20" cx="360" cy="160" id="connector5pin"  r="27.5" d="m 387.5,160 c 0,15.18783 -12.31217,27.5 -27.5,27.5 -15.18783,0 -27.5,-12.31217 -27.5,-27.5 0,-15.18783 12.31217,-27.5 27.5,-27.5 15.18783,0 27.5,12.31217 27.5,27.5 z"/>
+                </g>
+            </g>
+        </g>
+    </g>
+    <g transform="translate(-5.9867419,-5.9867406)" >
+        <g >
+            <g gorn="0.4.0.0" id="keepout" />
+        </g>
+    </g>
+    <g transform="translate(-5.9867419,-5.9867406)" >
+        <g >
+            <g gorn="0.5.0.0" id="soldermask" />
+        </g>
+    </g>
+    <g transform="translate(-5.9867419,-5.9867406)" >
+        <g >
+            <g gorn="0.6.0.0" id="outline" />
+        </g>
+    </g>
+</svg>
