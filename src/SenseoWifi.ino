@@ -1,8 +1,10 @@
 /*
-  SenseoWifi.ino - base file for the SenseoWifi project.
-  Created by Thomas Dietrich, 2016-03-05.
-  Released under some license.
+SenseoWifi.cpp - base file for the SenseoWifi project.
+Created by Thomas Dietrich, 2016-03-05.
+Released under some license.
 */
+
+#include <Homie.h>
 
 #include "SenseoLed.h"
 #include "SenseoSM.h"
@@ -10,194 +12,216 @@
 #include "Cup.h"
 #include "pins.h"
 #include "constants.h"
-
-#include <ESP8266WiFi.h>
-#include <PubSubClient.h>
+#include "testIO.cpp"
 
 SenseoLed mySenseoLed(ocSenseLedPin);
 SenseoSM mySenseoSM;
-Cup myCup(cupDetectorPin, beeperPin);
 SenseoControl myControl(ocPressPowerPin, ocPressLeftPin, ocPressRightPin);
+Cup myCup(cupDetectorPin);
 
-const char *WifiSsid = "AWF1877zh";    // cannot be longer than 32 characters!
-const char *WifiPass = "nurzen010!";   //
-IPAddress server(85, 119, 83, 194);
+HomieNode senseoNode("machine", "machine");
+HomieSetting<bool> CupDetectorAvailableSetting("available", "Enable cup detection (TCRT5000)");
+HomieSetting<bool> DebuggingSetting("debugging", "Enable debugging output over MQTT");
+HomieSetting<bool> BuzzerSetting("buzzer", "Enable buzzer feedback (no water, cup finished, ...)");
 
-WiFiClient wclient;
-PubSubClient client(wclient, server);
+unsigned long lastResendTime = 0;
 
-
+// will get called by the LED changed interrupt
 void ledChangedRoutine() {
-  // will get called by the LED changed interrupt
   mySenseoLed.pinStateToggled();
-
-  // Debugging and Setup: Uncomment the following to get LED pulse durations
-  //Serial.print("LED pulse duration: ");
-  //Serial.println(mySenseoLed.getLastPulseDuration());
+  Homie.getLogger() << "LED pulse duration: " << mySenseoLed.getLastPulseDuration() << endl;
 }
 
-void cupDetectorRoutine() {
-  //debounce!?
-  myCup.updateState();
-  //Serial.print("Cup Detector: ");
-  //Serial.println(myCup.getState());
+void setupHandler() {
+  attachInterrupt(digitalPinToInterrupt(ocSenseLedPin), ledChangedRoutine, CHANGE);
 }
 
-void callback(const MQTT::Publish& pub) {
-  //Serial.print(pub.topic());
-  //Serial.print(": ");
-  if (pub.has_stream()) {
-    Serial.println("(too long)");
-  } else
-    myControl.setMqttMessage(pub.payload_string());
-  //Serial.println(pub.payload_string());
-}
-
-
-void WiFiMQTTConnect() {
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.print("Connecting to ");
-    Serial.print(WifiSsid);
-    Serial.println("...");
-    WiFi.begin(WifiSsid, WifiPass);
-
-    if (WiFi.waitForConnectResult() != WL_CONNECTED)
-      return;
-    Serial.println("WiFi connected");
+void loopHandler() {
+  if (millis() - lastResendTime >= resendInterval * 1000UL || lastResendTime == 0) {
+    Homie.getLogger() << "Senseo state: " << mySenseoSM.getStateAsString() << endl;
+    senseoNode.setProperty("opState").send(mySenseoSM.getStateAsString());
+    lastResendTime = millis();
   }
-
-  if (WiFi.status() == WL_CONNECTED) {
-    if (!client.connected()) {
-      if (client.connect("arduinoClient")) {
-        //Serial.println("Connected to MQTT server");
-        client.set_callback(callback);
-        client.publish("SenseoWifi/w66a/msg", "Senseo Connected! :)");
-        client.subscribe("SenseoWifi/w66a/command");
+  
+  if (CupDetectorAvailableSetting.get()) {
+    myCup.updateState();
+    if (myCup.hasChanged()) {
+      Homie.getLogger() << "Cup state changed. Available: " << (myCup.isAvailable() ? "yes" : "no") << endl;
+      senseoNode.setProperty("cupAvailable").send(myCup.isAvailable() ? "true" : "false");
+      senseoNode.setProperty("cupFull").send(myCup.isFull() ? "true" : "false");
+    }
+  }
+  
+  mySenseoLed.updateState();
+  if (mySenseoLed.hasChanged()) {
+    Homie.getLogger() << "LED state machine, new LED state: " << mySenseoLed.getStateAsString() << endl;
+    senseoNode.setProperty("ledState").send(mySenseoLed.getStateAsString());
+  }
+  
+  mySenseoSM.updateState(mySenseoLed.getState());
+  if (mySenseoSM.stateHasChanged()) {
+    Homie.getLogger() << "(time in last state: " << mySenseoSM.getSecondsInLastState() << "s)" << endl;
+    Homie.getLogger() << "Senseo state machine, new Senseo state: " << mySenseoSM.getStateAsString() << endl;
+    senseoNode.setProperty("opState").send(mySenseoSM.getStateAsString());
+    
+    // state entry
+    switch (mySenseoSM.getState()) {
+      case SENSEO_OFF: {
+        senseoNode.setProperty("power").send("OFF");
+        break;
+      }
+      case SENSEO_HEATING: {
+        break;
+      }
+      case SENSEO_READY: {
+        if (BuzzerSetting.get()) tone(beeperPin, 1024, 500);
+        break;
+      }
+      case SENSEO_BREWING: {
+        senseoNode.setProperty("brew").send("true");
+        break;
+      }
+      case SENSEO_NOWATER: {
+        if (BuzzerSetting.get()) tone(beeperPin, 2048, 1000);
+        senseoNode.setProperty("outOfWater").send("true");
+        break;
       }
     }
-    if (client.connected()) client.loop();
   }
-}
-
-
-void testIO() {
-  Serial.println("\n=======================");
-  Serial.println("   Hello Senseo :)");
-  Serial.println("   (testing all inputs and outputs)");
-  Serial.println("=======================");
-  while (true) {
-    Serial.print("\nCup: ");
-    Serial.print(!digitalRead(cupDetectorPin));
-    Serial.print(" (");
-    Serial.print(analogRead(cupDetectorAnalogPin));
-    Serial.print(")   Senseo status LED: ");
-    Serial.print(!digitalRead(ocSenseLedPin));
-    Serial.println();
-    delay(2000);
-
-    Serial.println("Testing Beeper ...");
-    tone(beeperPin, 1024, 1000);
-    delay(2000);
-
-    if (0) {
-      Serial.println("Testing On/Off Button ...");
-      digitalWrite(ocPressPowerPin, HIGH);
-      delay(200);
-      digitalWrite(ocPressPowerPin, LOW);
-      delay(2000);
+  
+  // state exit
+  switch (mySenseoSM.getStatePrev()) {
+    case SENSEO_OFF: {
+      senseoNode.setProperty("power").send("ON");
+      break;
     }
-
-    if (0) {
-      Serial.println("Testing Left Button ...");
-      digitalWrite(ocPressLeftPin, HIGH);
-      delay(200);
-      digitalWrite(ocPressLeftPin, LOW);
-      delay(2000);
+    case SENSEO_HEATING: {
+      break;
     }
-
-    if (0) {
-      Serial.println("Testing Right Button ...");
-      digitalWrite(ocPressRightPin, HIGH);
-      delay(200);
-      digitalWrite(ocPressRightPin, LOW);
-      delay(2000);
+    case SENSEO_READY: {
+      break;
+    }
+    case SENSEO_BREWING: {
+      if (CupDetectorAvailableSetting.get()) myCup.fillUp();
+      senseoNode.setProperty("brew").send("false");
+      senseoNode.setProperty("cupFull").send("true");
+      // 0---------------------|-----+-----|-----+-----|-------100
+      int tolerance = (BrewingTime2Cup - BrewingTime1Cup) / 2;
+      if (abs(mySenseoSM.getSecondsInLastState() - BrewingTime1Cup) < tolerance) {
+        senseoNode.setProperty("brewedSize").send("1");
+      }
+      else if (abs(mySenseoSM.getSecondsInLastState() - BrewingTime2Cup) < tolerance) {
+        senseoNode.setProperty("brewedSize").send("2");
+      }
+      else {
+        senseoNode.setProperty("brewedSize").send("0");
+        senseoNode.setProperty("debug").send("unexpected time in SENSEO_BREWING state.");
+        senseoNode.setProperty("debug").send(String(mySenseoSM.getSecondsInLastState()));
+      }
+      break;
+    }
+    case SENSEO_NOWATER: {
+      senseoNode.setProperty("outOfWater").send("false");
+      break;
     }
   }
 }
 
+bool powerHandler(const HomieRange& range, const String& value) {
+  Homie.getLogger() << "MQTT topic '/power' message: " << value << endl;
+  if (value != "ON" || value !="OFF") {
+    Homie.getLogger() << "--> malformed message content. Allowed: [ON,OFF]" << endl;
+    return false;
+  }
+  
+  if (value == "ON" && mySenseoSM.getState() == SENSEO_OFF) {
+    myControl.pressPowerButton();
+  }
+  else if (value == "OFF" && mySenseoSM.getState() != SENSEO_OFF) {
+    myControl.pressPowerButton();
+  }
+  else {
+    // nothing to do here, machine already in right state
+    senseoNode.setProperty("power").send(value);
+  }
+  return true;
+}
+
+bool brewHandler(const HomieRange& range, const String& value) {
+  Homie.getLogger() << "MQTT topic '/brew' message: " << value << endl;
+  if (value != "1cup" || value !="2cup") {
+    Homie.getLogger() << "--> malformed message content. Allowed: [1cup,2cup]" << endl;
+    senseoNode.setProperty("brew").send("false");
+    return false;
+  }
+  
+  if (mySenseoSM.getState() != SENSEO_READY) {
+    Homie.getLogger() << "--> wrong state" << endl;
+    senseoNode.setProperty("brew").send("false");
+    return false;
+  }
+  
+  if (CupDetectorAvailableSetting.get()) {
+    if (myCup.isNotAvailable() || myCup.isFull()) {
+      Homie.getLogger() << "--> no or full cup detected" << endl;
+      senseoNode.setProperty("brew").send("false");
+      return false;
+    }
+  }
+  
+  if (value == "1cup") myControl.pressLeftButton();
+  if (value == "2cup") myControl.pressRightButton();
+  return true;
+}
 
 void setup() {
-  Serial.begin(9600);
-
+  Serial.begin(115200);
+  Serial << endl << endl << "☕☕☕☕ Enjoy your SenseoWifi ☕☕☕☕" << endl << endl;
+  
   pinMode(ocPressLeftPin, OUTPUT);
   pinMode(ocPressRightPin, OUTPUT);
   pinMode(ocPressPowerPin, OUTPUT);
   pinMode(ocSenseLedPin, INPUT_PULLUP);
-
-  pinMode(cupDetectorPin, INPUT_PULLUP);
-  pinMode(cupDetectorAnalogPin, INPUT);
-  pinMode(beeperPin, OUTPUT);
-
+  
   digitalWrite(ocPressPowerPin, LOW);
   digitalWrite(ocPressLeftPin, LOW);
   digitalWrite(ocPressRightPin, LOW);
-
-  attachInterrupt(digitalPinToInterrupt(ocSenseLedPin), ledChangedRoutine, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(cupDetectorPin), cupDetectorRoutine, CHANGE);
-
-  Serial.println("\n");
-
-  // uncomment to test your circuit and Senseo connections
-  //testIO();
+  
+  pinMode(beeperPin, OUTPUT);
+  pinMode(resetButtonPin, OUTPUT);
+  
+  if (CupDetectorAvailableSetting.get()) {
+    pinMode(cupDetectorPin, INPUT_PULLUP);
+    pinMode(cupDetectorAnalogPin, INPUT);
+    myCup.initDebouncer();
+  }
+  
+  Homie_setFirmware("senseo-wifi-wemos", "0.9.0");
+  Homie_setBrand("SenseoWifi");
+  Homie.setResetTrigger(resetButtonPin, LOW, 5000);
+  Homie.setSetupFunction(setupHandler);
+  Homie.setLoopFunction(loopHandler);
+  
+  CupDetectorAvailableSetting.setDefaultValue(false);
+  BuzzerSetting.setDefaultValue(true);
+  DebuggingSetting.setDefaultValue(false);
+  
+  senseoNode.advertise("ledState");
+  senseoNode.advertise("opState");
+  senseoNode.advertise("power").settable(powerHandler);
+  senseoNode.advertise("brew").settable(brewHandler);
+  if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupAvailable");
+  senseoNode.advertise("cupFull");
+  senseoNode.advertise("brewedSize");
+  senseoNode.advertise("outOfWater");
+  senseoNode.advertise("debug");
+  
+  // test the circuit and Senseo connections, will loop indefinitely
+  testIO();
+  
+  Homie.setup();
 }
-
 
 void loop() {
-  WiFiMQTTConnect();
-
-  mySenseoLed.updateState();
-  if (mySenseoLed.hasChanged()) {
-    Serial.print("LED state machine, new LED state: ");
-    Serial.println(mySenseoLed.getStateAsString());
-  }
-
-  mySenseoSM.updateState(mySenseoLed.getState());
-  if (mySenseoSM.stateHasChanged()) {
-    Serial.print("(time in last state: ");
-    Serial.print(mySenseoSM.getTimeInLastState());
-    Serial.print("s)\n");
-    Serial.print("Senseo state machine, new Senseo state: ");
-    Serial.print(mySenseoSM.getStateAsString());
-    Serial.print("\n\n");
-  }
-
-  if (mySenseoSM.stateHasChanged()) {
-    String s = "in last state: ";
-    client.publish("SenseoWifi/w66a/time", s + mySenseoSM.getTimeInLastState());
-    client.publish("SenseoWifi/w66a/state", mySenseoSM.getStateAsString());
-  }
-
-  //TODO:
-  // Publish Senseo state every x minutes
-    
-  if (mySenseoSM.stateHasChanged()) {
-    if (mySenseoSM.getState() == SENSEO_READY) {
-      tone(beeperPin, 1024, 500);
-    }
-    if (mySenseoSM.getState() == SENSEO_NOWATER) {
-      tone(beeperPin, 2048, 1000);
-    }
-  }
-
-  if (myControl.hasMqttMsg()) {
-    if (myControl.reactOnMqttMsg(mySenseoSM.getState())) {
-      Serial.println("MQTT: command accepted");
-      client.publish("SenseoWifi/w66a/response", "command accepted");
-    } else {
-      Serial.println("MQTT: unknown command");
-      client.publish("SenseoWifi/w66a/response", "unknown command");
-    }
-  }
+  Homie.loop();
 }
-
-

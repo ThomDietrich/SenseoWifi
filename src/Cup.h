@@ -6,21 +6,26 @@
 #ifndef Cup_h
 #define Cup_h
 
-#include "Arduino.h"
+#include "Homie.h"
 
 class Cup
 {
   public:
-    Cup(int dPin);
-    Cup(int dPin, int bPin);
+    Cup(int pin);
+    void initDebouncer();
     void updateState();
+    void fillUp();
+    bool hasChanged();
     bool isAvailable();
-    
+    bool isNotAvailable();
+    bool isFull();
+    bool isEmpty();
   private:
-    bool readDetectorPin();
     int detectorPin;
-    int beeperPin = -1;
-    bool cupAvailable = false;
+    Bounce debouncer;
+    bool changed;
+    bool cupAvailable;
+    bool cupFull = false;
 };
 
 #endif

@@ -8,7 +8,7 @@
 
 SenseoSM::SenseoSM()
 {
-  // nothing to do here 
+  // nothing to do here
 }
 
 void SenseoSM::updateState(ledStateEnum ledState) {
@@ -33,7 +33,6 @@ void SenseoSM::updateState(ledStateEnum ledState) {
       else if (ledState == LED_ON) senseoState = SENSEO_READY;
       else if ((millis() - lastStateChangeMillis) > (1000 * (HeatingTime + HeatingTimeTol))) {
         // Heating takes more time then expected, assume immediate brew.
-        Serial.println("Assuming immediate brew ...");
         senseoState = SENSEO_BREWING;
       }
       break;
@@ -46,13 +45,11 @@ void SenseoSM::updateState(ledStateEnum ledState) {
     case SENSEO_BREWING:
       if (ledState == LED_OFF) senseoState = SENSEO_OFF;
       else if (ledState == LED_FAST) {
+        //cup was brewed
         senseoState = SENSEO_NOWATER;
-        Serial.println("Cup brewed!");
-        //cup was brewed
       } else if (ledState == LED_ON) {
-        senseoState = SENSEO_READY;
-        Serial.println("Cup brewed!");
         //cup was brewed
+        senseoState = SENSEO_READY;
       }
       break;
     case SENSEO_NOWATER:
@@ -60,7 +57,7 @@ void SenseoSM::updateState(ledStateEnum ledState) {
       else if (ledState == LED_SLOW) senseoState = SENSEO_HEATING;
       else if (ledState == LED_ON) senseoState = SENSEO_READY;
       else if (ledState == LED_OFF) senseoState = SENSEO_OFF;
-      break;  
+      break;
   }
   if (senseoStatePrev != senseoState) {
     hasChanged = true;
@@ -70,21 +67,22 @@ void SenseoSM::updateState(ledStateEnum ledState) {
   }
 }
 
-
 bool SenseoSM::stateHasChanged() {
   // did the Senseo state change during last updateState() execution?
   return hasChanged;
 }
 
-
-int SenseoSM::getTimeInLastState() {
+int SenseoSM::getSecondsInLastState() {
   // how long was the machine in the last state? (in seconds)
   return (timeInLastState + 500) / 1000;
 }
 
-
 senseoStateEnum SenseoSM::getState() {
   return senseoState;
+}
+
+senseoStateEnum SenseoSM::getStatePrev() {
+  return senseoStatePrev;
 }
 
 String SenseoSM::getStateAsString() {
@@ -95,4 +93,3 @@ String SenseoSM::getStateAsString() {
   else if (senseoState == SENSEO_NOWATER) return "SENSEO_NOWATER";
   else return "SENSEO_unknown";
 }
-

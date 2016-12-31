@@ -12,18 +12,15 @@ SenseoLed::SenseoLed(int ledPin)
   ledChangeMillis = millis();
 }
 
-
 void SenseoLed::pinStateToggled() {
   prevLedChangeMillis = ledChangeMillis;
   ledChangeMillis = millis();
   ledChanged = true;
 }
 
-
 int SenseoLed::getLastPulseDuration() {
   return (ledChangeMillis - prevLedChangeMillis);
 }
-
 
 void SenseoLed::updateState() {
   ledStatePrev = ledState;
@@ -37,7 +34,7 @@ void SenseoLed::updateState() {
         ledState = LED_SLOW;
     } else {
       // Nothing to do here.
-      // pulseDuration could be below (user interaction) or above (end of a continuous state) the known times. 
+      // pulseDuration could be below (user interaction) or above (end of a continuous state) the known times.
       // No actions needed.
     }
     ledChanged = false;
@@ -50,7 +47,7 @@ void SenseoLed::updateState() {
 }
 
 bool SenseoLed::hasChanged() {
-  // did the LED state change during last updateState() execution? 
+  // did the LED state change during last updateState() execution?
   return (ledStatePrev != ledState);
 }
 
@@ -65,4 +62,3 @@ String SenseoLed::getStateAsString() {
   else if (ledState == LED_ON) return "LED_ON";
   else return "LED_unknown";
 }
-

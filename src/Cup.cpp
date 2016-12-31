@@ -6,33 +6,50 @@
 
 #include "Cup.h"
 
-Cup::Cup(int dPin)
+Cup::Cup(int pin)
 {
-  detectorPin = dPin;
-  cupAvailable = readDetectorPin();
+  detectorPin = pin;
+  debouncer = Bounce();
+  updateState();
 }
 
-Cup::Cup(int dPin, int bPin) {
-  detectorPin = dPin;
-  cupAvailable = readDetectorPin();
-  beeperPin = bPin;
+void Cup::initDebouncer() {
+  debouncer.attach(detectorPin);
+  debouncer.interval(50);
 }
-
 
 void Cup::updateState() {
-  cupAvailable = readDetectorPin();
-  if (cupAvailable && (beeperPin != -1)) {
-    tone(beeperPin, 512, 100);
+  changed = false;
+  debouncer.update();
+  bool val = !debouncer.read();
+  if (val != cupAvailable) {
+    cupAvailable = val;
+    Serial.println(cupAvailable);
+    changed = true;
   }
+  if (cupAvailable == false) cupFull = false;
 }
 
-
-bool Cup::readDetectorPin() {
-  return !digitalRead(detectorPin);
+void Cup::fillUp() {
+  if (cupAvailable == true) cupFull = true;
 }
 
+bool Cup::hasChanged() {
+  return changed;
+}
 
 bool Cup::isAvailable() {
-  //TODO: wait for state to settle
   return cupAvailable;
+}
+
+bool Cup::isNotAvailable() {
+  return !cupAvailable;
+}
+
+bool Cup::isFull() {
+  return cupFull;
+}
+
+bool Cup::isEmpty() {
+  return !cupFull;
 }
