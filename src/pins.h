@@ -14,7 +14,9 @@ Released under some license.
 #define ocSenseLedPin D7        // LED
 #define cupDetectorPin D6       // TCRT5000 D0
 #define beeperPin D8            // BUZZER
-#define resetButtonPin D3       //
+#define resetButtonPin D4       //
 #define cupDetectorAnalogPin A0 // TCRT5000 A0
+
+// Reset: D3 doesn't work (why?), D0 okay, D4 needs LED off
 
 #endif

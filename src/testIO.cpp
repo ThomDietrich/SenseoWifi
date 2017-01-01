@@ -15,28 +15,33 @@ inline void testIO() {
   while (true) {
     Serial.println("");
     
+    Serial.print("Testing Reset Button ... ");
+    Serial.print(digitalRead(resetButtonPin) ? "HIGH" : "LOW");
+    Serial.println();
+    delay(1000);
+    
     Serial.print("Testing Cup Detector ... ");
     Serial.print(!digitalRead(cupDetectorPin) ? "detected" : "not detected");
     Serial.print(" (analog: ");
     Serial.print(analogRead(cupDetectorAnalogPin));
     Serial.println(")");
-    delay(2000);
+    delay(1000);
     
     Serial.print("Testing Status LED Probe ... ");
     Serial.print(!digitalRead(ocSenseLedPin) ? "lid" : "off");
     Serial.println();
-    delay(2000);
+    delay(1000);
     
     Serial.println("Testing Beeper ... ");
     tone(beeperPin, 1024, 1000);
-    delay(2000);
+    delay(1000);
     
     if (1) {
       Serial.println("Testing On/Off Button Triggering ... ");
       digitalWrite(ocPressPowerPin, HIGH);
       delay(200);
       digitalWrite(ocPressPowerPin, LOW);
-      delay(2000);
+      delay(1000);
     }
     
     if (1) {
@@ -44,7 +49,7 @@ inline void testIO() {
       digitalWrite(ocPressLeftPin, HIGH);
       delay(200);
       digitalWrite(ocPressLeftPin, LOW);
-      delay(2000);
+      delay(1000);
     }
     
     if (0) {
@@ -52,7 +57,7 @@ inline void testIO() {
       digitalWrite(ocPressRightPin, HIGH);
       delay(200);
       digitalWrite(ocPressRightPin, LOW);
-      delay(2000);
+      delay(1000);
     }
   }
 }

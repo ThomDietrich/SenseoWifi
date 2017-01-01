@@ -35,7 +35,7 @@ void ledChangedHandler() {
 //
 bool powerHandler(const HomieRange& range, const String& value) {
   Homie.getLogger() << "MQTT topic '/power' message: " << value << endl;
-  if (value != "ON" || value !="OFF") {
+  if (value != "ON" || value !="OFF" || value != "RESET") {
     Homie.getLogger() << "--> malformed message content. Allowed: [ON,OFF]" << endl;
     return false;
   }
@@ -45,6 +45,9 @@ bool powerHandler(const HomieRange& range, const String& value) {
   }
   else if (value == "OFF" && mySenseoSM.getState() != SENSEO_OFF) {
     myControl.pressPowerButton();
+  }
+  else if (value == "RESET") {
+    Homie.reset();
   }
   else {
     // nothing to do here, machine already in right state
@@ -148,6 +151,7 @@ void senseoStateExitAction() {
 //
 void setupHandler() {
   attachInterrupt(digitalPinToInterrupt(ocSenseLedPin), ledChangedHandler, CHANGE);
+  if (BuzzerSetting.get()) tone(beeperPin, 2048, 500);
 }
 
 //
@@ -202,7 +206,7 @@ void setup() {
   digitalWrite(ocPressRightPin, LOW);
   
   pinMode(beeperPin, OUTPUT);
-  pinMode(resetButtonPin, OUTPUT);
+  pinMode(resetButtonPin, INPUT_PULLUP);
   
   if (CupDetectorAvailableSetting.get()) {
     pinMode(cupDetectorPin, INPUT_PULLUP);
@@ -210,8 +214,10 @@ void setup() {
     myCup.initDebouncer();
   }
   
-  Homie_setFirmware("senseo-wifi-wemos", "0.9.0");
+  Homie_setFirmware("senseo-wifi-wemos", "0.9.1");
   Homie_setBrand("SenseoWifi");
+  //Homie.disableResetTrigger();
+  Homie.disableLedFeedback();
   Homie.setResetTrigger(resetButtonPin, LOW, 5000);
   Homie.setSetupFunction(setupHandler);
   Homie.setLoopFunction(loopHandler);
@@ -232,6 +238,8 @@ void setup() {
   
   // test the circuit and Senseo connections, will loop indefinitely
   //testIO();
+  
+  if (BuzzerSetting.get()) tone(beeperPin, 1024, 500);
   
   Homie.setup();
 }
