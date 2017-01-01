@@ -1,7 +1,7 @@
 /*
-  Cup.cpp - Library for the SenseoWifi project.
-  Created by Thomas Dietrich, 2016-03-05.
-  Released under some license.
+Cup.cpp - Library for the SenseoWifi project.
+Created by Thomas Dietrich, 2016-03-05.
+Released under some license.
 */
 
 #include "Cup.h"
@@ -9,8 +9,8 @@
 Cup::Cup(int pin)
 {
   detectorPin = pin;
+  cupAvailable = !digitalRead(detectorPin);
   debouncer = Bounce();
-  updateState();
 }
 
 void Cup::initDebouncer() {
@@ -19,23 +19,37 @@ void Cup::initDebouncer() {
 }
 
 void Cup::updateState() {
-  changed = false;
   debouncer.update();
   bool val = !debouncer.read();
   if (val != cupAvailable) {
     cupAvailable = val;
-    Serial.println(cupAvailable);
-    changed = true;
+    availableChanged = true;
+    if (cupAvailable == false) {
+      cupFull = false;
+      fullChanged = true;
+    }
   }
-  if (cupAvailable == false) cupFull = false;
 }
 
 void Cup::fillUp() {
-  if (cupAvailable == true) cupFull = true;
+    cupFull = true;
+    fullChanged = true;
 }
 
-bool Cup::hasChanged() {
-  return changed;
+bool Cup::isAvailableChanged() {
+  if (availableChanged) {
+    availableChanged = false;
+    return true;
+  };
+  return false;
+}
+
+bool Cup::isFullChanged() {
+  if (fullChanged) {
+    fullChanged = false;
+    return true;
+  };
+  return false;
 }
 
 bool Cup::isAvailable() {

@@ -15,7 +15,8 @@ class Cup
     void initDebouncer();
     void updateState();
     void fillUp();
-    bool hasChanged();
+    bool isAvailableChanged();
+    bool isFullChanged();
     bool isAvailable();
     bool isNotAvailable();
     bool isFull();
@@ -23,8 +24,9 @@ class Cup
   private:
     int detectorPin;
     Bounce debouncer;
-    bool changed;
-    bool cupAvailable;
+    bool availableChanged = false;
+    bool fullChanged = false;
+    bool cupAvailable = false;
     bool cupFull = false;
 };
 

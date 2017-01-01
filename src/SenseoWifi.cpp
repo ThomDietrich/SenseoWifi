@@ -134,8 +134,7 @@ void senseoStateExitAction() {
       }
       else {
         senseoNode.setProperty("brewedSize").send("0");
-        senseoNode.setProperty("debug").send("unexpected time in SENSEO_BREWING state.");
-        senseoNode.setProperty("debug").send(String(mySenseoSM.getSecondsInLastState()));
+        senseoNode.setProperty("debug").send(String("unexpected time in SENSEO_BREWING state.") + String(mySenseoSM.getSecondsInLastState()));
       }
       break;
     }
@@ -161,9 +160,12 @@ void loopHandler() {
   
   if (CupDetectorAvailableSetting.get()) {
     myCup.updateState();
-    if (myCup.hasChanged()) {
+    if (myCup.isAvailableChanged()) {
       Homie.getLogger() << "Cup state changed. Available: " << (myCup.isAvailable() ? "yes" : "no") << endl;
       senseoNode.setProperty("cupAvailable").send(myCup.isAvailable() ? "true" : "false");
+    }
+    if (myCup.isFullChanged()) {
+      Homie.getLogger() << "Cup state changed. Full: " << (myCup.isFull() ? "yes" : "no") << endl;
       senseoNode.setProperty("cupFull").send(myCup.isFull() ? "true" : "false");
     }
   }
@@ -214,19 +216,19 @@ void setup() {
   Homie.setSetupFunction(setupHandler);
   Homie.setLoopFunction(loopHandler);
   
-  CupDetectorAvailableSetting.setDefaultValue(false);
+  CupDetectorAvailableSetting.setDefaultValue(true);
   BuzzerSetting.setDefaultValue(true);
   DebuggingSetting.setDefaultValue(false);
   
+  senseoNode.advertise("debug");
   senseoNode.advertise("ledState");
   senseoNode.advertise("opState");
   senseoNode.advertise("power").settable(powerHandler);
   senseoNode.advertise("brew").settable(brewHandler);
-  if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupAvailable");
-  senseoNode.advertise("cupFull");
   senseoNode.advertise("brewedSize");
   senseoNode.advertise("outOfWater");
-  senseoNode.advertise("debug");
+  if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupAvailable");
+  if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupFull");
   
   // test the circuit and Senseo connections, will loop indefinitely
   //testIO();
