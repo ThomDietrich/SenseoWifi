@@ -39,7 +39,7 @@ inline void testIO() {
     if (1) {
       Serial.println("Testing On/Off Button Triggering ... ");
       digitalWrite(ocPressPowerPin, HIGH);
-      delay(200);
+      delay(50);
       digitalWrite(ocPressPowerPin, LOW);
       delay(1000);
     }
@@ -47,7 +47,7 @@ inline void testIO() {
     if (1) {
       Serial.println("Testing Left Button Triggering ... ");
       digitalWrite(ocPressLeftPin, HIGH);
-      delay(200);
+      delay(50);
       digitalWrite(ocPressLeftPin, LOW);
       delay(1000);
     }
@@ -55,7 +55,7 @@ inline void testIO() {
     if (0) {
       Serial.println("Testing Right Button Triggering ...");
       digitalWrite(ocPressRightPin, HIGH);
-      delay(200);
+      delay(50);
       digitalWrite(ocPressRightPin, LOW);
       delay(1000);
     }

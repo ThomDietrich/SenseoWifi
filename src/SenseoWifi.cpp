@@ -35,22 +35,34 @@ void ledChangedHandler() {
 //
 bool powerHandler(const HomieRange& range, const String& value) {
   Homie.getLogger() << "MQTT topic '/power' message: " << value << endl;
-  if (value != "ON" || value !="OFF" || value != "RESET") {
+  if (value != "ON" && value !="OFF" && value != "RESET") {
     Homie.getLogger() << "--> malformed message content. Allowed: [ON,OFF]" << endl;
     return false;
   }
   
   if (value == "ON" && mySenseoSM.getState() == SENSEO_OFF) {
-    myControl.pressPowerButton();
+    Homie.getLogger() << "Powering on" << endl;
+    digitalWrite(ocPressPowerPin, HIGH);
+    delay(50);
+    digitalWrite(ocPressPowerPin, LOW);
   }
   else if (value == "OFF" && mySenseoSM.getState() != SENSEO_OFF) {
-    myControl.pressPowerButton();
+    Homie.getLogger() << "Powering off" << endl;
+    digitalWrite(ocPressPowerPin, HIGH);
+    delay(50);
+    digitalWrite(ocPressPowerPin, LOW);
   }
   else if (value == "RESET") {
+    if (BuzzerSetting.get()) {
+      tone(beeperPin, 1024, 250);
+      tone(beeperPin, 2048, 250);
+      tone(beeperPin, 1024, 500);
+    }
     Homie.reset();
   }
   else {
     // nothing to do here, machine already in right state
+    Homie.getLogger() << "Machine in correct power state" << endl;
     senseoNode.setProperty("power").send(value);
   }
   return true;
@@ -59,7 +71,7 @@ bool powerHandler(const HomieRange& range, const String& value) {
 //
 bool brewHandler(const HomieRange& range, const String& value) {
   Homie.getLogger() << "MQTT topic '/brew' message: " << value << endl;
-  if (value != "1cup" || value !="2cup") {
+  if (value != "1cup" && value !="2cup") {
     Homie.getLogger() << "--> malformed message content. Allowed: [1cup,2cup]" << endl;
     senseoNode.setProperty("brew").send("false");
     return false;
@@ -151,7 +163,14 @@ void senseoStateExitAction() {
 //
 void setupHandler() {
   attachInterrupt(digitalPinToInterrupt(ocSenseLedPin), ledChangedHandler, CHANGE);
+  senseoNode.setProperty("ledState").send(mySenseoLed.getStateAsString());
+  senseoNode.setProperty("opState").send(mySenseoSM.getStateAsString());
+  if (CupDetectorAvailableSetting.get()) {
+    senseoNode.setProperty("cupAvailable").send(myCup.isAvailable() ? "true" : "false");
+    senseoNode.setProperty("cupFull").send(myCup.isFull() ? "true" : "false");
+  }
   if (BuzzerSetting.get()) tone(beeperPin, 2048, 500);
+  Homie.getLogger() << endl << endl << "☕☕☕☕ Enjoy your SenseoWifi ☕☕☕☕" << endl << endl;
 }
 
 //
@@ -194,7 +213,6 @@ void loopHandler() {
 //
 void setup() {
   Serial.begin(115200);
-  Serial << endl << endl << "☕☕☕☕ Enjoy your SenseoWifi ☕☕☕☕" << endl << endl;
   
   pinMode(ocPressLeftPin, OUTPUT);
   pinMode(ocPressRightPin, OUTPUT);
@@ -214,7 +232,7 @@ void setup() {
     myCup.initDebouncer();
   }
   
-  Homie_setFirmware("senseo-wifi-wemos", "0.9.1");
+  Homie_setFirmware("senseo-wifi-wemos", "0.9.3");
   Homie_setBrand("SenseoWifi");
   //Homie.disableResetTrigger();
   Homie.disableLedFeedback();

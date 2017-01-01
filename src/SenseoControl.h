@@ -6,7 +6,7 @@
 #ifndef SenseoControl_h
 #define SenseoControl_h
 
-#include "Arduino.h"
+#include "Homie.h"
 #include "enums.h"
 
 class SenseoControl
@@ -17,7 +17,6 @@ class SenseoControl
     void pressLeftButton();
     void pressRightButton();
   private:
-    bool cupAvailable = false;
     int powerButtonPin;
     int leftButtonPin;
     int rightButtonPin;
