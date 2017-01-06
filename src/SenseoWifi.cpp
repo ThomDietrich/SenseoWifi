@@ -21,10 +21,8 @@ Cup myCup(cupDetectorPin);
 
 HomieNode senseoNode("machine", "machine");
 HomieSetting<bool> CupDetectorAvailableSetting("available", "Enable cup detection (TCRT5000)");
-HomieSetting<bool> DebuggingSetting("debugging", "Enable debugging output over MQTT");
 HomieSetting<bool> BuzzerSetting("buzzer", "Enable buzzer feedback (no water, cup finished, ...)");
-
-unsigned long lastResendTime = 0;
+HomieSetting<bool> DebuggingSetting("debugging", "Enable debugging output over MQTT");
 
 // will get called by the LED changed interrupt
 void ledChangedHandler() {
@@ -42,15 +40,11 @@ bool powerHandler(const HomieRange& range, const String& value) {
   
   if (value == "ON" && mySenseoSM.getState() == SENSEO_OFF) {
     Homie.getLogger() << "Powering on" << endl;
-    digitalWrite(ocPressPowerPin, HIGH);
-    delay(50);
-    digitalWrite(ocPressPowerPin, LOW);
+    myControl.pressPowerButton();
   }
   else if (value == "OFF" && mySenseoSM.getState() != SENSEO_OFF) {
     Homie.getLogger() << "Powering off" << endl;
-    digitalWrite(ocPressPowerPin, HIGH);
-    delay(50);
-    digitalWrite(ocPressPowerPin, LOW);
+    myControl.pressPowerButton();
   }
   else if (value == "RESET") {
     if (BuzzerSetting.get()) {
@@ -162,25 +156,28 @@ void senseoStateExitAction() {
 
 //
 void setupHandler() {
-  attachInterrupt(digitalPinToInterrupt(ocSenseLedPin), ledChangedHandler, CHANGE);
-  senseoNode.setProperty("ledState").send(mySenseoLed.getStateAsString());
-  senseoNode.setProperty("opState").send(mySenseoSM.getStateAsString());
-  if (CupDetectorAvailableSetting.get()) {
-    senseoNode.setProperty("cupAvailable").send(myCup.isAvailable() ? "true" : "false");
-    senseoNode.setProperty("cupFull").send(myCup.isFull() ? "true" : "false");
-  }
   if (BuzzerSetting.get()) tone(beeperPin, 2048, 500);
-  Homie.getLogger() << endl << endl << "☕☕☕☕ Enjoy your SenseoWifi ☕☕☕☕" << endl << endl;
+  /**
+  * Send status data once.
+  */
+  // senseoNode.setProperty("ledState").send(mySenseoLed.getStateAsString());
+  // senseoNode.setProperty("opState").send(mySenseoSM.getStateAsString());
+  // if (CupDetectorAvailableSetting.get()) {
+  //   senseoNode.setProperty("cupAvailable").send(myCup.isAvailable() ? "true" : "false");
+  //   senseoNode.setProperty("cupFull").send(myCup.isFull() ? "true" : "false");
+  // }
+  
+  attachInterrupt(digitalPinToInterrupt(ocSenseLedPin), ledChangedHandler, CHANGE);
+  
+  Homie.getLogger() << endl << "☕☕☕☕ Enjoy your SenseoWifi ☕☕☕☕" << endl << endl;
 }
 
 //
 void loopHandler() {
-  if (millis() - lastResendTime >= resendInterval * 1000UL || lastResendTime == 0) {
-    Homie.getLogger() << "Senseo state: " << mySenseoSM.getStateAsString() << endl;
-    senseoNode.setProperty("opState").send(mySenseoSM.getStateAsString());
-    lastResendTime = millis();
-  }
-  
+  /**
+  * Check and update the cup availability, based on the cup detector signal.
+  * (no cup, cup available, cup full)
+  */
   if (CupDetectorAvailableSetting.get()) {
     myCup.updateState();
     if (myCup.isAvailableChanged()) {
@@ -193,12 +190,20 @@ void loopHandler() {
     }
   }
   
+  /**
+  * Update the low level LED state machine based on the measured LED timings.
+  * (off, slow blinking, fast blinking, on)
+  */
   mySenseoLed.updateState();
   if (mySenseoLed.hasChanged()) {
     Homie.getLogger() << "LED state machine, new LED state: " << mySenseoLed.getStateAsString() << endl;
     senseoNode.setProperty("ledState").send(mySenseoLed.getStateAsString());
   }
   
+  /**
+  * Update the higher level Senseo state machine based on the LED state.
+  * (off, heating, ready, brewing, no water)
+  */
   mySenseoSM.updateState(mySenseoLed.getState());
   if (mySenseoSM.stateHasChanged()) {
     Homie.getLogger() << "(time in last state: " << mySenseoSM.getSecondsInLastState() << "s)" << endl;
@@ -208,12 +213,21 @@ void loopHandler() {
     senseoStateEntryAction();
     senseoStateExitAction();
   }
+  
+  /**
+  * Non-blocking Low-High-Low transition.
+  * Check for a simulated button press - release after > 100ms
+  */
+  myControl.releaseIfPressed();
 }
 
 //
 void setup() {
   Serial.begin(115200);
   
+  /**
+  * pin initializations
+  */
   pinMode(ocPressLeftPin, OUTPUT);
   pinMode(ocPressRightPin, OUTPUT);
   pinMode(ocPressPowerPin, OUTPUT);
@@ -229,9 +243,22 @@ void setup() {
   if (CupDetectorAvailableSetting.get()) {
     pinMode(cupDetectorPin, INPUT_PULLUP);
     pinMode(cupDetectorAnalogPin, INPUT);
+    /** needed class routine after pin initialization */
     myCup.initDebouncer();
   }
   
+  /**
+  * Testing routine. Activate only in development environemt.
+  * Test the circuit and Senseo connections, loops indefinitely.
+  *
+  * Wifi will NOT BE AVAILABLE, no OTA!
+  */
+  if (false) testIO();
+  
+  
+  /**
+  * Homie specific settings
+  */
   Homie_setFirmware("senseo-wifi-wemos", "0.9.3");
   Homie_setBrand("SenseoWifi");
   //Homie.disableResetTrigger();
@@ -240,10 +267,16 @@ void setup() {
   Homie.setSetupFunction(setupHandler);
   Homie.setLoopFunction(loopHandler);
   
+  /**
+  * Homie: Options, see at the top of this file.
+  */
   CupDetectorAvailableSetting.setDefaultValue(true);
   BuzzerSetting.setDefaultValue(true);
   DebuggingSetting.setDefaultValue(false);
   
+  /**
+  * Homie: Advertise custom SenseoWifi MQTT topics
+  */
   senseoNode.advertise("debug");
   senseoNode.advertise("ledState");
   senseoNode.advertise("opState");
@@ -254,10 +287,7 @@ void setup() {
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupAvailable");
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupFull");
   
-  // test the circuit and Senseo connections, will loop indefinitely
-  //testIO();
-  
-  if (BuzzerSetting.get()) tone(beeperPin, 1024, 500);
+  if (BuzzerSetting.get()) tone(beeperPin, 1024, 2000);
   
   Homie.setup();
 }

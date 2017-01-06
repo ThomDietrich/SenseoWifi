@@ -9,6 +9,10 @@
 #include "Homie.h"
 #include "enums.h"
 
+/**
+ * SenseoControl includes all functions hardware control specific.
+ * At the time of this writing, this is mainly "pressing" the buttons.
+ */
 class SenseoControl
 {
   public:
@@ -16,7 +20,11 @@ class SenseoControl
     void pressPowerButton();
     void pressLeftButton();
     void pressRightButton();
+    void releaseIfPressed();
   private:
+    /** The time one/the last button was pressed. '0' means no button is currently pressed */
+    unsigned long timestampPressed = 0;
+    const int pressDurationMillis = 100;
     int powerButtonPin;
     int leftButtonPin;
     int rightButtonPin;

@@ -14,18 +14,28 @@ SenseoControl::SenseoControl(int pBPin, int lBPin,  int rBPin) {
 
 void SenseoControl::pressPowerButton() {
   digitalWrite(powerButtonPin, HIGH);
-  delay(200);
-  digitalWrite(powerButtonPin, LOW);
+  timestampPressed = millis();
 }
 
 void SenseoControl::pressLeftButton() {
   digitalWrite(leftButtonPin, HIGH);
-  delay(200);
-  digitalWrite(leftButtonPin, LOW);
+  timestampPressed = millis();
 }
 
 void SenseoControl::pressRightButton() {
   digitalWrite(rightButtonPin, HIGH);
-  delay(200);
-  digitalWrite(rightButtonPin, LOW);
+  timestampPressed = millis();
+}
+
+/**
+ * The 'press..Button()' functions will "press" but not release the buttons.
+ * Call this method regularly (every loop() run) to release buttons after some time.
+ */
+void SenseoControl::releaseIfPressed() {
+  if ((timestampPressed != 0) && (millis() - timestampPressed >= pressDurationMillis)) {
+    digitalWrite(powerButtonPin, LOW);
+    digitalWrite(leftButtonPin, LOW);
+    digitalWrite(rightButtonPin, LOW);
+    timestampPressed = 0;
+  }
 }
