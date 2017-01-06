@@ -4,7 +4,7 @@
   Released under some license.
 */
 
-#include "Arduino.h"
+#include "Homie.h"
 #include "pins.h"
 
 inline void testIO() {

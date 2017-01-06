@@ -109,7 +109,7 @@ void senseoStateEntryAction() {
       break;
     }
     case SENSEO_NOWATER: {
-      if (BuzzerSetting.get()) tone(beeperPin, 2048, 1000);
+      if (BuzzerSetting.get()) tone(beeperPin, 4096, 2000);
       senseoNode.setProperty("outOfWater").send("true");
       break;
     }

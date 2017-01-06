@@ -13,8 +13,10 @@ SenseoLed::SenseoLed(int ledPin)
 }
 
 void SenseoLed::pinStateToggled() {
+  unsigned long now = millis();
+  if (now - ledChangeMillis <= 5) return; // simple debouncer
   prevLedChangeMillis = ledChangeMillis;
-  ledChangeMillis = millis();
+  ledChangeMillis = now;
   ledChanged = true;
 }
 
