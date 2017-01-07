@@ -10,19 +10,19 @@ Cup::Cup(int pin)
 {
   detectorPin = pin;
   cupAvailable = !digitalRead(detectorPin);
-  debouncer = Bounce();
-}
-
-void Cup::initDebouncer() {
-  debouncer.attach(detectorPin);
-  debouncer.interval(50);
 }
 
 void Cup::updateState() {
-  debouncer.update();
-  bool val = !debouncer.read();
-  if (val != cupAvailable) {
-    cupAvailable = val;
+  bool value = !digitalRead(detectorPin);
+  //debounce
+  if (value != lastChangeValue) {
+    lastChangeValue = value;
+    lastChangeMillis = millis();
+  }
+  if (millis() - lastChangeMillis <= CupDebounceInterval) return;
+  // process debounced detector reading
+  if (value != cupAvailable) {
+    cupAvailable = value;
     availableChanged = true;
     if (cupAvailable == false) {
       cupFull = false;
@@ -32,8 +32,8 @@ void Cup::updateState() {
 }
 
 void Cup::fillUp() {
-    cupFull = true;
-    fullChanged = true;
+  cupFull = true;
+  fullChanged = true;
 }
 
 bool Cup::isAvailableChanged() {

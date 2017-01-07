@@ -32,7 +32,7 @@ void SenseoControl::pressRightButton() {
  * Call this method regularly (every loop() run) to release buttons after some time.
  */
 void SenseoControl::releaseIfPressed() {
-  if ((timestampPressed != 0) && (millis() - timestampPressed >= pressDurationMillis)) {
+  if ((timestampPressed != 0) && (millis() - timestampPressed >= pressDuration)) {
     digitalWrite(powerButtonPin, LOW);
     digitalWrite(leftButtonPin, LOW);
     digitalWrite(rightButtonPin, LOW);

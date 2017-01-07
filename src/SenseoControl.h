@@ -8,6 +8,7 @@
 
 #include "Homie.h"
 #include "enums.h"
+#include "constants.h"
 
 /**
  * SenseoControl includes all functions hardware control specific.
@@ -24,7 +25,6 @@ class SenseoControl
   private:
     /** The time one/the last button was pressed. '0' means no button is currently pressed */
     unsigned long timestampPressed = 0;
-    const int pressDurationMillis = 100;
     int powerButtonPin;
     int leftButtonPin;
     int rightButtonPin;

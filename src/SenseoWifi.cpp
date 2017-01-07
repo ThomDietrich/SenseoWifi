@@ -148,6 +148,7 @@ void senseoStateExitAction() {
       break;
     }
     case SENSEO_NOWATER: {
+      //if (mySenseoSM.getState() != SENSEO_OFF)
       senseoNode.setProperty("outOfWater").send("false");
       break;
     }
@@ -243,8 +244,6 @@ void setup() {
   if (CupDetectorAvailableSetting.get()) {
     pinMode(cupDetectorPin, INPUT_PULLUP);
     pinMode(cupDetectorAnalogPin, INPUT);
-    /** needed class routine after pin initialization */
-    myCup.initDebouncer();
   }
   
   /**

@@ -7,12 +7,12 @@
 #define Cup_h
 
 #include "Homie.h"
+#include "constants.h"
 
 class Cup
 {
   public:
     Cup(int pin);
-    void initDebouncer();
     void updateState();
     void fillUp();
     bool isAvailableChanged();
@@ -23,7 +23,8 @@ class Cup
     bool isEmpty();
   private:
     int detectorPin;
-    Bounce debouncer;
+    bool lastChangeValue = false;
+    unsigned long lastChangeMillis = 0;
     bool availableChanged = false;
     bool fullChanged = false;
     bool cupAvailable = false;
