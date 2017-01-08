@@ -123,22 +123,70 @@ bool brewHandler(const HomieRange& range, const String& value) {
 }
 
 /**
+* Senseo state machine, transition reaction: exit actions
+*/
+void senseoStateExitAction() {
+  switch (mySenseoSM.getStatePrev()) {
+    case SENSEO_OFF: {
+      senseoNode.setProperty("power").send("ON");
+      break;
+    }
+    case SENSEO_HEATING: {
+      break;
+    }
+    case SENSEO_READY: {
+      break;
+    }
+    case SENSEO_BREWING: {
+      senseoNode.setProperty("brew").send("false");
+      /** filter out short reheating cycles */
+      if (mySenseoSM.getSecondsInLastState() <= 10) break;
+      
+      if (CupDetectorAvailableSetting.get()) myCup.fillUp();
+      // 0---------------------|-----+-----|-----+-----|-------100
+      int tolerance = (BrewingTime2Cup - BrewingTime1Cup) / 2;
+      if (abs(mySenseoSM.getSecondsInLastState() - BrewingTime1Cup) < tolerance) {
+        senseoNode.setProperty("brewedSize").setRetained(false).send("1");
+      }
+      else if (abs(mySenseoSM.getSecondsInLastState() - BrewingTime2Cup) < tolerance) {
+        senseoNode.setProperty("brewedSize").setRetained(false).send("2");
+      }
+      else {
+        senseoNode.setProperty("brewedSize").setRetained(false).send("0");
+        senseoNode.setProperty("debug").setRetained(false).send("brew: unexpected time in SENSEO_BREWING state. Please adapt timings.");
+      }
+      
+      senseoNode.setProperty("debug").setRetained(false).send(String("brew: ") + String(mySenseoSM.getSecondsInLastState()) + String(" seconds"));
+      
+      //If recipe is active, transition to the last step "power off"
+      //TODO Check if brewedSize == recipeBrewCups ?
+      if (recipeBrewCups != 0) {
+        recipeBrewCups = 0;
+        senseoNode.setProperty("recipe").setRetained(false).send("FINISHED");
+        senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_OFF state reached. Finished.");
+        myControl.pressPowerButton();
+      }
+      break;
+    }
+    case SENSEO_NOWATER: {
+      if (mySenseoSM.getState() != SENSEO_OFF) senseoNode.setProperty("outOfWater").send("false");
+      break;
+    }
+  }
+}
+
+/**
 * Senseo state machine, transition reaction: entry actions
 */
 void senseoStateEntryAction() {
   switch (mySenseoSM.getState()) {
     case SENSEO_OFF: {
       senseoNode.setProperty("power").send("OFF");
-      /** Delete recipe if set */
+      /** Cancel recipe if set */
       if (recipeBrewCups != 0) {
         recipeBrewCups = 0;
-        if (mySenseoSM.getStatePrev() == SENSEO_BREWING) {
-          senseoNode.setProperty("recipe").setRetained(false).send("FINISHED");
-          senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_OFF state reached. Finished.");
-        } else {
-          senseoNode.setProperty("recipe").setRetained(false).send("CANCELLED");
-          senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_OFF state reached. Cancelling.");
-        }
+        senseoNode.setProperty("recipe").setRetained(false).send("CANCELLED");
+        senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_OFF state reached. Cancelling.");
       }
       break;
     }
@@ -176,55 +224,6 @@ void senseoStateEntryAction() {
         senseoNode.setProperty("recipe").setRetained(false).send("CANCELLED");
         senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_NOWATER state reached. Cancelling.");
       }
-      break;
-    }
-  }
-}
-
-/**
-* Senseo state machine, transition reaction: exit actions
-*/
-void senseoStateExitAction() {
-  switch (mySenseoSM.getStatePrev()) {
-    case SENSEO_OFF: {
-      senseoNode.setProperty("power").send("ON");
-      break;
-    }
-    case SENSEO_HEATING: {
-      break;
-    }
-    case SENSEO_READY: {
-      break;
-    }
-    case SENSEO_BREWING: {
-      senseoNode.setProperty("brew").send("false");
-      /** filter out short reheating cycles */
-      if (mySenseoSM.getSecondsInLastState() <= 10) break;
-      
-      if (CupDetectorAvailableSetting.get()) myCup.fillUp();
-      // 0---------------------|-----+-----|-----+-----|-------100
-      int tolerance = (BrewingTime2Cup - BrewingTime1Cup) / 2;
-      if (abs(mySenseoSM.getSecondsInLastState() - BrewingTime1Cup) < tolerance) {
-        senseoNode.setProperty("brewedSize").setRetained(false).send("1");
-      }
-      else if (abs(mySenseoSM.getSecondsInLastState() - BrewingTime2Cup) < tolerance) {
-        senseoNode.setProperty("brewedSize").setRetained(false).send("2");
-      }
-      else {
-        senseoNode.setProperty("brewedSize").setRetained(false).send("0");
-        senseoNode.setProperty("debug").setRetained(false).send("brew: unexpected time in SENSEO_BREWING state. Please adapt timings.");
-      }
-      
-      senseoNode.setProperty("debug").setRetained(false).send(String("brew: ") + String(mySenseoSM.getSecondsInLastState()) + String(" seconds"));
-      
-      //If recipe is active, transition to the last step "power off"
-      if (recipeBrewCups != 0) {
-        myControl.pressPowerButton();
-      }
-      break;
-    }
-    case SENSEO_NOWATER: {
-      if (mySenseoSM.getState() != SENSEO_OFF) senseoNode.setProperty("outOfWater").send("false");
       break;
     }
   }
@@ -285,8 +284,8 @@ void loopHandler() {
   if (mySenseoSM.stateHasChanged()) {
     senseoNode.setProperty("opState").send(mySenseoSM.getStateAsString());
     
-    senseoStateEntryAction();
     senseoStateExitAction();
+    senseoStateEntryAction();
   }
   
   /**
