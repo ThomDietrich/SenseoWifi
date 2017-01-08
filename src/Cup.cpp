@@ -24,7 +24,7 @@ void Cup::updateState() {
   if (value != cupAvailable) {
     cupAvailable = value;
     availableChanged = true;
-    if (cupAvailable == false) {
+    if (cupFull && !cupAvailable) {
       cupFull = false;
       fullChanged = true;
     }

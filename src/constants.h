@@ -24,7 +24,7 @@ static const int BrewingTime1Cup = 55;
 static const int BrewingTime2Cup = 85;
 
 // Debouncing (in milliseconds)
-static const int CupDebounceInterval = 300;
+static const int CupDebounceInterval = 500;
 static const int LedIgnoreChangeDuration = 5;
 
 // Duration of button "press" (in milliseconds)

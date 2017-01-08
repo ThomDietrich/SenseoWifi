@@ -24,63 +24,75 @@ HomieSetting<bool> CupDetectorAvailableSetting("available", "Enable cup detectio
 HomieSetting<bool> BuzzerSetting("buzzer", "Enable buzzer feedback (no water, cup finished, ...)");
 HomieSetting<bool> DebuggingSetting("debugging", "Enable debugging output over MQTT");
 
-// will get called by the LED changed interrupt
+/**
+* Called by the LED changed interrupt
+*/
 void ledChangedHandler() {
   mySenseoLed.pinStateToggled();
-  Homie.getLogger() << "LED pulse duration: " << mySenseoLed.getLastPulseDuration() << endl;
 }
 
-//
+/**
+* Called by Homie upon an MQTT message to '.../power'
+* No MQTT response is sent from this routine, as pessimistic feedback will be handled in the state machine.
+*/
 bool powerHandler(const HomieRange& range, const String& value) {
   Homie.getLogger() << "MQTT topic '/power' message: " << value << endl;
   if (value != "ON" && value !="OFF" && value != "RESET") {
     Homie.getLogger() << "--> malformed message content. Allowed: [ON,OFF]" << endl;
+    senseoNode.setProperty("debug").setRetained(false).send("power: malformed message content. Allowed: [ON,OFF].");
     return false;
   }
   
   if (value == "ON" && mySenseoSM.getState() == SENSEO_OFF) {
-    Homie.getLogger() << "Powering on" << endl;
     myControl.pressPowerButton();
   }
   else if (value == "OFF" && mySenseoSM.getState() != SENSEO_OFF) {
-    Homie.getLogger() << "Powering off" << endl;
     myControl.pressPowerButton();
   }
   else if (value == "RESET") {
-    if (BuzzerSetting.get()) {
-      tone(beeperPin, 1024, 250);
-      tone(beeperPin, 2048, 250);
-      tone(beeperPin, 1024, 500);
-    }
+    tone(beeperPin, 1024, 250);
+    tone(beeperPin, 2048, 250);
+    tone(beeperPin, 1024, 4096);
     Homie.reset();
   }
   else {
-    // nothing to do here, machine already in right state
-    Homie.getLogger() << "Machine in correct power state" << endl;
     senseoNode.setProperty("power").send(value);
   }
   return true;
 }
 
-//
+/**
+* Called by Homie upon an MQTT message to '.../brew'.
+* No MQTT response is sent from this routine, as pessimistic feedback will be handled in the state machine.
+*/
 bool brewHandler(const HomieRange& range, const String& value) {
   Homie.getLogger() << "MQTT topic '/brew' message: " << value << endl;
+  
+  /**
+  * Catch incorrect messages
+  */
   if (value != "1cup" && value !="2cup") {
     Homie.getLogger() << "--> malformed message content. Allowed: [1cup,2cup]" << endl;
-    senseoNode.setProperty("brew").send("false");
+    senseoNode.setProperty("debug").setRetained(false).send("brew: malformed message content. Allowed: [1cup,2cup].");
     return false;
   }
   
+  /**
+  * Catch wrong senseo state machine state
+  */
   if (mySenseoSM.getState() != SENSEO_READY) {
     Homie.getLogger() << "--> wrong state" << endl;
-    senseoNode.setProperty("brew").send("false");
+    senseoNode.setProperty("debug").setRetained(false).send("brew: machine currently in the wrong state (not ready).");
     return false;
   }
   
+  /**
+  * Catch missing or full cup
+  */
   if (CupDetectorAvailableSetting.get()) {
     if (myCup.isNotAvailable() || myCup.isFull()) {
       Homie.getLogger() << "--> no or full cup detected" << endl;
-      senseoNode.setProperty("brew").send("false");
+      senseoNode.setProperty("debug").setRetained(false).send("brew: no or full cup present.");
       return false;
     }
   }
@@ -90,7 +102,9 @@ bool brewHandler(const HomieRange& range, const String& value) {
   return true;
 }
 
-//
+/**
+*
+*/
 void senseoStateEntryAction() {
   switch (mySenseoSM.getState()) {
     case SENSEO_OFF: {
@@ -116,7 +130,9 @@ void senseoStateEntryAction() {
   }
 }
 
-//
+/**
+*
+*/
 void senseoStateExitAction() {
   switch (mySenseoSM.getStatePrev()) {
     case SENSEO_OFF: {
@@ -143,19 +159,20 @@ void senseoStateExitAction() {
       }
       else {
         senseoNode.setProperty("brewedSize").send("0");
-        senseoNode.setProperty("debug").send(String("unexpected time in SENSEO_BREWING state.") + String(mySenseoSM.getSecondsInLastState()));
+        senseoNode.setProperty("debug").setRetained(false).send(String("unexpected time in SENSEO_BREWING state.") + String(mySenseoSM.getSecondsInLastState()));
       }
       break;
     }
     case SENSEO_NOWATER: {
-      //if (mySenseoSM.getState() != SENSEO_OFF)
-      senseoNode.setProperty("outOfWater").send("false");
+      if (mySenseoSM.getState() != SENSEO_OFF) senseoNode.setProperty("outOfWater").send("false");
       break;
     }
   }
 }
 
-//
+/**
+*
+*/
 void setupHandler() {
   if (BuzzerSetting.get()) tone(beeperPin, 2048, 500);
   /**
@@ -173,7 +190,9 @@ void setupHandler() {
   Homie.getLogger() << endl << "☕☕☕☕ Enjoy your SenseoWifi ☕☕☕☕" << endl << endl;
 }
 
-//
+/**
+*
+*/
 void loopHandler() {
   /**
   * Check and update the cup availability, based on the cup detector signal.
@@ -222,7 +241,6 @@ void loopHandler() {
   myControl.releaseIfPressed();
 }
 
-//
 void setup() {
   Serial.begin(115200);
   
@@ -248,7 +266,7 @@ void setup() {
   
   /**
   * Testing routine. Activate only in development environemt.
-  * Test the circuit and Senseo connections, loops indefinitely.
+  * Tests the circuit and Senseo connections, loops indefinitely.
   *
   * Wifi will NOT BE AVAILABLE, no OTA!
   */
@@ -276,7 +294,7 @@ void setup() {
   /**
   * Homie: Advertise custom SenseoWifi MQTT topics
   */
-  senseoNode.advertise("debug");
+  senseoNode.advertise("debug"); // do not retain!
   senseoNode.advertise("ledState");
   senseoNode.advertise("opState");
   senseoNode.advertise("power").settable(powerHandler);
@@ -291,7 +309,6 @@ void setup() {
   Homie.setup();
 }
 
-//
 void loop() {
   Homie.loop();
 }
