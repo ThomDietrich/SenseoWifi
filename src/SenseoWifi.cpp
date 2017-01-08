@@ -102,6 +102,7 @@ bool brewHandler(const HomieRange& range, const String& value) {
   */
   if (recipeBrewCupActive != 0) {
     Homie.getLogger() << "--> recipe active" << endl;
+    senseoNode.setProperty("recipe").setRetained(false).send("IN_PROGRESS");
     senseoNode.setProperty("debug").setRetained(false).send("brew: recipe already enqueued, takes priority.");
     return false;
   }
@@ -117,6 +118,7 @@ bool brewHandler(const HomieRange& range, const String& value) {
       if (value == "1cup") recipeBrewCupActive = 1;
       if (value == "2cup") recipeBrewCupActive = 2;
       senseoNode.setProperty("debug").setRetained(false).send("recipe: Powering up. Waiting for SENSEO_READY state.");
+      senseoNode.setProperty("recipe").setRetained(false).send("RECEIVED");
       myControl.pressPowerButton();
       return true;
     }
@@ -141,7 +143,13 @@ void senseoStateEntryAction() {
       /** Delete recipe if set */
       if (recipeBrewCupActive != 0) {
         recipeBrewCupActive = 0;
-        senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_OFF state reached. Recipe is either finished or cancelled now.");
+        if (mySenseoSM.getStatePrev() == SENSEO_BREWING) {
+          senseoNode.setProperty("recipe").setRetained(false).send("FINISHED");
+          senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_OFF state reached. Finished.");
+        } else {
+          senseoNode.setProperty("recipe").setRetained(false).send("CANCELLED");
+          senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_OFF state reached. Cancelling.");
+        }
       }
       break;
     }
@@ -159,6 +167,7 @@ void senseoStateEntryAction() {
         } else {
           /** If no or full cup available, this should not happen at this point of a recipe */
           recipeBrewCupActive = 0;
+          senseoNode.setProperty("recipe").setRetained(false).send("CANCELLED");
           senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_READY state reached but no or full cup found. Cancelling.");
         }
       }
@@ -175,6 +184,7 @@ void senseoStateEntryAction() {
       /** Delete recipe if set */
       if (recipeBrewCupActive != 0) {
         recipeBrewCupActive = 0;
+        senseoNode.setProperty("recipe").setRetained(false).send("CANCELLED");
         senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_NOWATER state reached. Cancelling.");
       }
       break;
@@ -360,6 +370,7 @@ void setup() {
   senseoNode.advertise("brew").settable(brewHandler);
   senseoNode.advertise("brewedSize");
   senseoNode.advertise("outOfWater");
+  senseoNode.advertise("recipe");
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupAvailable");
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupFull");
   
