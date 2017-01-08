@@ -20,7 +20,7 @@ SenseoControl myControl(ocPressPowerPin, ocPressLeftPin, ocPressRightPin);
 Cup myCup(cupDetectorPin);
 
 HomieNode senseoNode("machine", "machine");
-HomieSetting<bool> CupDetectorAvailableSetting("available", "Enable cup detection (TCRT5000)");
+HomieSetting<bool> CupDetectorAvailableSetting("cupdetector", "Enable cup detection (TCRT5000)");
 HomieSetting<bool> BuzzerSetting("buzzer", "Enable buzzer feedback (no water, cup finished, ...)");
 HomieSetting<bool> RecipesActiveSetting("recipes", "Enable higher level recipes instead of direct control");
 
