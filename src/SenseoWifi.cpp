@@ -22,7 +22,15 @@ Cup myCup(cupDetectorPin);
 HomieNode senseoNode("machine", "machine");
 HomieSetting<bool> CupDetectorAvailableSetting("available", "Enable cup detection (TCRT5000)");
 HomieSetting<bool> BuzzerSetting("buzzer", "Enable buzzer feedback (no water, cup finished, ...)");
+HomieSetting<bool> RecipesActiveSetting("recipes", "Enable higher level recipes instead of direct control");
 HomieSetting<bool> DebuggingSetting("debugging", "Enable debugging output over MQTT");
+
+/**
+* If a recipe is active, a certain process will be executed.
+* BrewCup will power up, brew a cup and power off
+* [0 = off, 1 = 1cup, 2= 2cup]
+*/
+int recipeBrewCupActive = 0;
 
 /**
 * Called by the LED changed interrupt
@@ -78,15 +86,6 @@ bool brewHandler(const HomieRange& range, const String& value) {
   }
   
   /**
-  * Catch wrong senseo state machine state
-  */
-  if (mySenseoSM.getState() != SENSEO_READY) {
-    Homie.getLogger() << "--> wrong state" << endl;
-    senseoNode.setProperty("debug").setRetained(false).send("brew: machine currently in the wrong state (not ready).");
-    return false;
-  }
-  
-  /**
   * Catch missing or full cup
   */
   if (CupDetectorAvailableSetting.get()) {
@@ -97,18 +96,53 @@ bool brewHandler(const HomieRange& range, const String& value) {
     }
   }
   
+  /**
+  * Catch already enqueued recipe
+  * Ensures only one recipe is active at all times
+  */
+  if (recipeBrewCupActive != 0) {
+    Homie.getLogger() << "--> recipe active" << endl;
+    senseoNode.setProperty("debug").setRetained(false).send("brew: recipe already enqueued, takes priority.");
+    return false;
+  }
+  
+  /**
+  * Catch wrong senseo state machine state
+  * Enqueue recipe
+  */
+  if (mySenseoSM.getState() != SENSEO_READY) {
+    Homie.getLogger() << "--> wrong state" << endl;
+    senseoNode.setProperty("debug").setRetained(false).send("brew: machine currently in the wrong state (not ready).");
+    if (RecipesActiveSetting.get()) {
+      if (value == "1cup") recipeBrewCupActive = 1;
+      if (value == "2cup") recipeBrewCupActive = 2;
+      senseoNode.setProperty("debug").setRetained(false).send("recipe: Powering up. Waiting for SENSEO_READY state.");
+      myControl.pressPowerButton();
+      return true;
+    }
+    return false;
+  }
+  
+  /**
+  * If all the above didn't trap - execute
+  */
   if (value == "1cup") myControl.pressLeftButton();
   if (value == "2cup") myControl.pressRightButton();
   return true;
 }
 
 /**
-*
+* Senseo state machine, transition reaction: entry actions
 */
 void senseoStateEntryAction() {
   switch (mySenseoSM.getState()) {
     case SENSEO_OFF: {
       senseoNode.setProperty("power").send("OFF");
+      /** Delete recipe if set */
+      if (recipeBrewCupActive != 0) {
+        recipeBrewCupActive = 0;
+        senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_OFF state reached. Recipe is either finished or cancelled now.");
+      }
       break;
     }
     case SENSEO_HEATING: {
@@ -116,6 +150,18 @@ void senseoStateEntryAction() {
     }
     case SENSEO_READY: {
       if (BuzzerSetting.get()) tone(beeperPin, 1024, 500);
+      /** Execute recipe if set */
+      if (recipeBrewCupActive != 0) {
+        if (!CupDetectorAvailableSetting.get() || (CupDetectorAvailableSetting.get() && myCup.isAvailable() && myCup.isEmpty())) {
+          if (recipeBrewCupActive == 1) myControl.pressLeftButton();
+          if (recipeBrewCupActive == 2) myControl.pressRightButton();
+          senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_READY state reached, executing.");
+        } else {
+          /** If no or full cup available, this should not happen at this point of a recipe */
+          recipeBrewCupActive = 0;
+          senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_READY state reached but no or full cup found. Cancelling.");
+        }
+      }
       break;
     }
     case SENSEO_BREWING: {
@@ -125,13 +171,19 @@ void senseoStateEntryAction() {
     case SENSEO_NOWATER: {
       if (BuzzerSetting.get()) tone(beeperPin, 4096, 2000);
       senseoNode.setProperty("outOfWater").send("true");
+      
+      /** Delete recipe if set */
+      if (recipeBrewCupActive != 0) {
+        recipeBrewCupActive = 0;
+        senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_NOWATER state reached. Cancelling.");
+      }
       break;
     }
   }
 }
 
 /**
-*
+* Senseo state machine, transition reaction: exit actions
 */
 void senseoStateExitAction() {
   switch (mySenseoSM.getStatePrev()) {
@@ -160,6 +212,12 @@ void senseoStateExitAction() {
       else {
         senseoNode.setProperty("brewedSize").send("0");
         senseoNode.setProperty("debug").setRetained(false).send(String("unexpected time in SENSEO_BREWING state.") + String(mySenseoSM.getSecondsInLastState()));
+      }
+      
+      //If recipe is active, transition to the last step "power off"
+      if (recipeBrewCupActive != 0) {
+        myControl.pressPowerButton();
+        recipeBrewCupActive = 0;
       }
       break;
     }
@@ -289,6 +347,7 @@ void setup() {
   */
   CupDetectorAvailableSetting.setDefaultValue(true);
   BuzzerSetting.setDefaultValue(true);
+  RecipesActiveSetting.setDefaultValue(true);
   DebuggingSetting.setDefaultValue(false);
   
   /**
