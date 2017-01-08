@@ -7,9 +7,6 @@
 #ifndef SenseoConstants_h
 #define SenseoConstants_h
 
-// Wifi/Communication
-static const int resendInterval = 1800;    //in seconds
-
 // LED state machine
 // Measure your timings by activating debugging in ledChangedRoutine()
 static const int pulseDurLedSlow = 1000;                   // duration of one pulse when LED is blinking slow in milliseconds (state LED_SLOW)
