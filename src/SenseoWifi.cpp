@@ -47,7 +47,7 @@ bool powerHandler(const HomieRange& range, const String& value) {
     senseoNode.setProperty("debug").setRetained(false).send("power: malformed message content. Allowed: [ON,OFF].");
     return false;
   }
-  
+
   if (value == "ON" && mySenseoSM.getState() == SENSEO_OFF) {
     myControl.pressPowerButton();
   }
@@ -57,9 +57,6 @@ bool powerHandler(const HomieRange& range, const String& value) {
   else if (value == "RESET") {
     tone(beeperPin, 4096, 8000);
     Homie.reset();
-  }
-  else {
-    senseoNode.setProperty("power").send(value);
   }
   return true;
 }
@@ -76,7 +73,7 @@ bool brewHandler(const HomieRange& range, const String& value) {
     senseoNode.setProperty("debug").setRetained(false).send("brew: malformed message content. Allowed: [1cup,2cup].");
     return false;
   }
-  
+
   /**
   * Catch missing or full cup
   */
@@ -86,7 +83,7 @@ bool brewHandler(const HomieRange& range, const String& value) {
       return false;
     }
   }
-  
+
   /**
   * Catch already enqueued recipe
   * Ensures only one recipe is active at all times
@@ -96,7 +93,7 @@ bool brewHandler(const HomieRange& range, const String& value) {
     senseoNode.setProperty("debug").setRetained(false).send("brew: recipe already enqueued, takes priority.");
     return false;
   }
-  
+
   /**
   * Catch wrong senseo state machine state
   * Enqueue recipe
@@ -113,7 +110,7 @@ bool brewHandler(const HomieRange& range, const String& value) {
     }
     return false;
   }
-  
+
   /**
   * If all the above didn't trap - execute
   */
@@ -129,6 +126,8 @@ void senseoStateExitAction() {
   switch (mySenseoSM.getStatePrev()) {
     case SENSEO_OFF: {
       senseoNode.setProperty("power").send("ON");
+      senseoNode.setProperty("outOfWater").send("false");
+      senseoNode.setProperty("brew").send("false");
       break;
     }
     case SENSEO_HEATING: {
@@ -139,9 +138,9 @@ void senseoStateExitAction() {
     }
     case SENSEO_BREWING: {
       senseoNode.setProperty("brew").send("false");
-      /** filter out short reheating cycles */
+      /* filter out short reheating cycles */
       if (mySenseoSM.getSecondsInLastState() <= 10) break;
-      
+
       if (CupDetectorAvailableSetting.get()) myCup.fillUp();
       // 0---------------------|-----+-----|-----+-----|-------100
       int tolerance = (BrewingTime2Cup - BrewingTime1Cup) / 2;
@@ -155,9 +154,9 @@ void senseoStateExitAction() {
         senseoNode.setProperty("brewedSize").setRetained(false).send("0");
         senseoNode.setProperty("debug").setRetained(false).send("brew: unexpected time in SENSEO_BREWING state. Please adapt timings.");
       }
-      
+
       senseoNode.setProperty("debug").setRetained(false).send(String("brew: ") + String(mySenseoSM.getSecondsInLastState()) + String(" seconds"));
-      
+
       //If recipe is active, transition to the last step "power off"
       //TODO Check if brewedSize == recipeBrewCups ?
       if (recipeBrewCups != 0) {
@@ -185,7 +184,7 @@ void senseoStateEntryAction() {
       /** Cancel recipe if set */
       if (recipeBrewCups != 0) {
         recipeBrewCups = 0;
-        senseoNode.setProperty("recipe").setRetained(false).send("CANCELLED");
+        senseoNode.setProperty("recipe").setRetained(false).send("CANCELED");
         senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_OFF state reached. Cancelling.");
       }
       break;
@@ -194,7 +193,7 @@ void senseoStateEntryAction() {
       break;
     }
     case SENSEO_READY: {
-      if (BuzzerSetting.get()) tone(beeperPin, 1024, 500);
+      if (BuzzerSetting.get()) tone(beeperPin, 1536, 500);
       /** Execute recipe if set */
       if (recipeBrewCups != 0) {
         if (!CupDetectorAvailableSetting.get() || (CupDetectorAvailableSetting.get() && myCup.isAvailable() && myCup.isEmpty())) {
@@ -204,7 +203,7 @@ void senseoStateEntryAction() {
         } else {
           /** If no or full cup available, this should not happen at this point of a recipe */
           recipeBrewCups = 0;
-          senseoNode.setProperty("recipe").setRetained(false).send("CANCELLED");
+          senseoNode.setProperty("recipe").setRetained(false).send("CANCELED");
           senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_READY state reached but no or full cup found. Cancelling.");
         }
       }
@@ -217,11 +216,11 @@ void senseoStateEntryAction() {
     case SENSEO_NOWATER: {
       if (BuzzerSetting.get()) tone(beeperPin, 4096, 2000);
       senseoNode.setProperty("outOfWater").send("true");
-      
+
       /** Delete recipe if set */
       if (recipeBrewCups != 0) {
         recipeBrewCups = 0;
-        senseoNode.setProperty("recipe").setRetained(false).send("CANCELLED");
+        senseoNode.setProperty("recipe").setRetained(false).send("CANCELED");
         senseoNode.setProperty("debug").setRetained(false).send("recipe: SENSEO_NOWATER state reached. Cancelling.");
       }
       break;
@@ -234,19 +233,21 @@ void senseoStateEntryAction() {
 */
 void setupHandler() {
   if (BuzzerSetting.get()) tone(beeperPin, 2048, 500);
-  
+
   attachInterrupt(digitalPinToInterrupt(ocSenseLedPin), ledChangedHandler, CHANGE);
-  
+
   Homie.getLogger() << endl << "☕☕☕☕ Enjoy your SenseoWifi ☕☕☕☕" << endl << endl;
-  
+
   /**
   * Send status data once.
   */
   senseoNode.setProperty("opState").send(mySenseoSM.getStateAsString());
   if (CupDetectorAvailableSetting.get()) {
     senseoNode.setProperty("cupAvailable").send(myCup.isAvailable() ? "true" : "false");
-    //senseoNode.setProperty("cupFull").send(myCup.isFull() ? "true" : "false");
+    senseoNode.setProperty("cupFull").send(myCup.isFull() ? "true" : "false");
   }
+  senseoNode.setProperty("outOfWater").send("false");
+  senseoNode.setProperty("brew").send("false");
 }
 
 /**
@@ -266,28 +267,29 @@ void loopHandler() {
       senseoNode.setProperty("cupFull").send(myCup.isFull() ? "true" : "false");
     }
   }
-  
+
   /**
   * Update the low level LED state machine based on the measured LED timings.
   * (off, slow blinking, fast blinking, on)
   */
   mySenseoLed.updateState();
   if (mySenseoLed.hasChanged()) {
-    //Homie.getLogger() << "LED state machine, new LED state: " << mySenseoLed.getStateAsString() << endl;
+    if (true) Homie.getLogger() << "LED state machine, new LED state: " << mySenseoLed.getStateAsString() << endl;
   }
-  
+
   /**
   * Update the higher level Senseo state machine based on the LED state.
   * (off, heating, ready, brewing, no water)
   */
   mySenseoSM.updateState(mySenseoLed.getState());
   if (mySenseoSM.stateHasChanged()) {
+    if (true) Homie.getLogger() << "Senseo state machine, new Senseo state: " << mySenseoSM.getStateAsString() << endl;
     senseoNode.setProperty("opState").send(mySenseoSM.getStateAsString());
-    
+
     senseoStateExitAction();
     senseoStateEntryAction();
   }
-  
+
   /**
   * Non-blocking Low-High-Low transition.
   * Check for a simulated button press - release after > 100ms
@@ -297,7 +299,7 @@ void loopHandler() {
 
 void setup() {
   Serial.begin(115200);
-  
+
   /**
   * pin initializations
   */
@@ -305,19 +307,19 @@ void setup() {
   pinMode(ocPressRightPin, OUTPUT);
   pinMode(ocPressPowerPin, OUTPUT);
   pinMode(ocSenseLedPin, INPUT_PULLUP);
-  
+
   digitalWrite(ocPressPowerPin, LOW);
   digitalWrite(ocPressLeftPin, LOW);
   digitalWrite(ocPressRightPin, LOW);
-  
+
   pinMode(beeperPin, OUTPUT);
   pinMode(resetButtonPin, INPUT_PULLUP);
-  
+
   if (CupDetectorAvailableSetting.get()) {
     pinMode(cupDetectorPin, INPUT_PULLUP);
     pinMode(cupDetectorAnalogPin, INPUT);
   }
-  
+
   /**
   * Testing routine. Activate only in development environemt.
   * Tests the circuit and Senseo connections, loops indefinitely.
@@ -325,41 +327,41 @@ void setup() {
   * Wifi will NOT BE AVAILABLE, no OTA!
   */
   if (false) testIO();
-  
-  
+
+
   /**
   * Homie specific settings
   */
-  Homie_setFirmware("senseo-wifi-wemos", "0.9.8");
+  Homie_setFirmware("senseo-wifi-wemos", "0.9.9");
   Homie_setBrand("SenseoWifi");
   //Homie.disableResetTrigger();
   Homie.disableLedFeedback();
   Homie.setResetTrigger(resetButtonPin, LOW, 5000);
   Homie.setSetupFunction(setupHandler);
   Homie.setLoopFunction(loopHandler);
-  
+
   /**
   * Homie: Options, see at the top of this file.
   */
   CupDetectorAvailableSetting.setDefaultValue(true);
   BuzzerSetting.setDefaultValue(true);
   RecipesActiveSetting.setDefaultValue(true);
-  
+
   /**
   * Homie: Advertise custom SenseoWifi MQTT topics
   */
-  senseoNode.advertise("debug"); // use with setRetained(false)
+  senseoNode.advertise("debug"); // not retained
   senseoNode.advertise("opState");
   senseoNode.advertise("power").settable(powerHandler);
   senseoNode.advertise("brew").settable(brewHandler);
-  senseoNode.advertise("brewedSize"); // use with setRetained(false)
+  senseoNode.advertise("brewedSize"); // not retained
   senseoNode.advertise("outOfWater");
-  senseoNode.advertise("recipe"); // use with setRetained(false)
+  senseoNode.advertise("recipe"); // not retained
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupAvailable");
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupFull");
-  
-  if (BuzzerSetting.get()) tone(beeperPin, 1024, 2000);
-  
+
+  if (BuzzerSetting.get()) tone(beeperPin, 1536, 2000);
+
   Homie.setup();
 }
 

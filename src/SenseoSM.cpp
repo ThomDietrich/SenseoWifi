@@ -6,8 +6,7 @@
 
 #include "SenseoSM.h"
 
-SenseoSM::SenseoSM()
-{
+SenseoSM::SenseoSM() {
   // nothing to do here
 }
 

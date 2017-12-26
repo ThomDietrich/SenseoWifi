@@ -6,8 +6,7 @@
 
 #include "SenseoLed.h"
 
-SenseoLed::SenseoLed(int ledPin)
-{
+SenseoLed::SenseoLed(int ledPin) {
   ocSenseLedPin = ledPin;
   ledChangeMillis = millis();
 }
@@ -29,6 +28,7 @@ void SenseoLed::updateState() {
   if (ledChanged) {
     // When there was an interrupt from the Senseo LED pin
     int pulseDuration = ledChangeMillis - prevLedChangeMillis;
+    if (true) Homie.getLogger() << "LED observer, last pulse duration: " << pulseDuration << endl;
     // decide if LED is blinking fast or slow
     if (abs(pulseDuration - pulseDurLedFast) < pulseDurTolerance) {
         ledState = LED_FAST;
