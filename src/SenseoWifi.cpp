@@ -150,8 +150,12 @@ void senseoStateExitAction() {
       else if (abs(mySenseoSM.getSecondsInLastState() - BrewingTime2Cup) < tolerance) {
         senseoNode.setProperty("brewedSize").setRetained(false).send("2");
       }
+      else if (abs(mySenseoSM.getSecondsInLastState() - BrewingTime1CupNoWater) < tolerance) {
+        if (mySenseoSM.getState() == SENSEO_NOWATER) {
+          senseoNode.setProperty("brewedSize").setRetained(false).send("1");
+        }
+      }
       else {
-        senseoNode.setProperty("brewedSize").setRetained(false).send("0");
         senseoNode.setProperty("debug").setRetained(false).send("brew: unexpected time in SENSEO_BREWING state. Please adapt timings.");
       }
 
