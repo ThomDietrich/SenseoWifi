@@ -61,23 +61,25 @@ In the end the PCB will not be visible from the outside, powered from the inside
 | 3× 470Ω Resistor | |
 | 1× 1.5kΩ Resistor | |
 | 1× Push button | To reset the microcontroller from the outside |
-| Generic male headers | A bunch of them |
 | 1× Step Down AC-DC Converter (220V to 5V) | As power supply internally sourced (e.g. [ebay.de](http://r.ebay.com/rSZMfO)) |
+| Generic male headers | A bunch of them |
 | 1× Buzzer 12mm | *Optional* - Used for audio feedback, can be disabled in firmware (e.g. [reichelt.de](https://www.reichelt.de/Signalakustik/AL-60P01A/3/index.html?ACTION=3&GROUPID=6560&ARTICLE=145896&START=0&OFFSET=16&)) |
 | 1× 150Ω Resistor | *Optional* - Size depends on buzzer |
 | 1× TCRT5000 | *Optional* - To detect a cup. Reflective Optical Sensor, Regulated Module (e.g. [ebay.de](http://r.ebay.com/M1Iuci)) |
 
+![](images/DSC09587.JPG)
+
 ### Steps
 
-1. Solder the custom PCB according to the schematics
+1. Solder the custom PCB according to the schematics designed in [Fritzing]()
 2. Wire the custom PCB to the Senseo PCB to interface with the Senseo LED and buttons
 3. Add the optical sensor to the Senseo housing (optional)
 4. Connect the additional power supply
 5. Include a button accessible from the bottom to reset the firmware settings
 
-![](images/PCBv1.7-layout.png)
+![](images/PCBv1.7.png)
 
-For now, please follow the pictures of the end result located in the [images](images) folder.
+For now, please follow the details given in the schematics and the pictures located in the [images](images) folder.
 Further details outstanding. Don't hesitate to open a support issue!
 
 Happy Hacking!
