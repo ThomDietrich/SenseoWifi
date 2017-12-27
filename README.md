@@ -56,7 +56,7 @@ In the end the PCB will not be visible from the outside, powered from the inside
 | Part | Description |
 |------|-------------|
 | 1× Custom PCB | See [`SenseoWifi-PCB` folder](SenseoWifi-PCB) for schematic |
-| 1× WeMos D1 Mini |  |
+| 1× WeMos D1 Mini | Microcontroller, [learn more…](https://wiki.wemos.cc/products:d1:d1_mini) |
 | 4× Sharp PC817 | Optocoupler interfacing with the Senseo board (e.g. [ebay.de](http://r.ebay.com/FofSOY)) |
 | 3× 470Ω Resistor | |
 | 1× 1.5kΩ Resistor | |
@@ -71,7 +71,7 @@ In the end the PCB will not be visible from the outside, powered from the inside
 
 ### Steps
 
-1. Solder the custom PCB according to the schematics designed in [Fritzing]()
+1. Solder the custom PCB according to the schematics designed in [Fritzing](http://fritzing.org)
 2. Wire the custom PCB to the Senseo PCB to interface with the Senseo LED and buttons
 3. Add the optical sensor to the Senseo housing (optional)
 4. Connect the additional power supply
