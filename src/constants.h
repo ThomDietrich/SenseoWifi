@@ -17,9 +17,10 @@ static const int pulseContThreshold = 2 * pulseDurLedSlow; // time before switch
 // Senseo state machine (in seconds)
 static const int HeatingTime = 60;
 static const int HeatingTimeTol = 10;
-static const int BrewingTime1Cup = 55;
-static const int BrewingTime2Cup = 85;
-static const int BrewingTime1CupNoWater = 21;
+static const int Brew1CupSeconds = 21;
+static const int Brew2CupSeconds = 41;
+static const int BrewHeat1CupSeconds = 55;
+static const int BrewHeat2CupSeconds = 85;
 
 // Debouncing (in milliseconds)
 static const int CupDebounceInterval = 500;

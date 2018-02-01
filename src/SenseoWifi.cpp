@@ -138,30 +138,43 @@ void senseoStateExitAction() {
     }
     case SENSEO_BREWING: {
       senseoNode.setProperty("brew").send("false");
-      /* filter out short reheating cycles */
-      if (mySenseoSM.getSecondsInLastState() <= 10) break;
+      // Determine brewed cup size based on time in brewing state
+      int brewedSeconds = mySenseoSM.getSecondsInLastState();
+      int brewedSize = 0;
 
-      if (CupDetectorAvailableSetting.get()) myCup.fillUp();
+      if (brewedSeconds <= 10) break;
+
       // 0---------------------|-----+-----|-----+-----|-------100
-      int tolerance = (BrewingTime2Cup - BrewingTime1Cup) / 2;
-      if (abs(mySenseoSM.getSecondsInLastState() - BrewingTime1Cup) < tolerance) {
-        senseoNode.setProperty("brewedSize").setRetained(false).send("1");
-      }
-      else if (abs(mySenseoSM.getSecondsInLastState() - BrewingTime2Cup) < tolerance) {
-        senseoNode.setProperty("brewedSize").setRetained(false).send("2");
-      }
-      else if (abs(mySenseoSM.getSecondsInLastState() - BrewingTime1CupNoWater) < tolerance) {
-        if (mySenseoSM.getState() == SENSEO_NOWATER) {
-          senseoNode.setProperty("brewedSize").setRetained(false).send("1");
+      int tolerance = (BrewHeat2CupSeconds - BrewHeat1CupSeconds) / 2;
+
+      if (mySenseoSM.getState() == SENSEO_READY) {
+        if (abs(brewedSeconds - BrewHeat1CupSeconds) < tolerance) {
+          brewedSize = 1;
+        }
+        else if (abs(brewedSeconds - BrewHeat2CupSeconds) < tolerance) {
+          brewedSize = 2;
         }
       }
-      else {
+
+      tolerance = (Brew2CupSeconds - Brew1CupSeconds) / 2;
+      if (mySenseoSM.getState() == SENSEO_NOWATER || mySenseoSM.getState() == SENSEO_OFF) {
+        if (abs(brewedSeconds - Brew1CupSeconds) < tolerance) {
+          brewedSize = 1;
+        }
+        else if (abs(brewedSeconds - Brew2CupSeconds) < tolerance) {
+          brewedSize = 2;
+        }
+      }
+
+      senseoNode.setProperty("brewedSize").setRetained(false).send(String(brewedSize));
+      senseoNode.setProperty("debug").setRetained(false).send(String("brew: ") + String(brewedSeconds) + String(" seconds"));
+      if (brewedSize == 0) {
         senseoNode.setProperty("debug").setRetained(false).send("brew: unexpected time in SENSEO_BREWING state. Please adapt timings.");
       }
 
-      senseoNode.setProperty("debug").setRetained(false).send(String("brew: ") + String(mySenseoSM.getSecondsInLastState()) + String(" seconds"));
+      if (CupDetectorAvailableSetting.get()) myCup.fillUp();
 
-      //If recipe is active, transition to the last step "power off"
+      // If recipe is active, transition to the last step "power off"
       //TODO Check if brewedSize == recipeBrewCups ?
       if (recipeBrewCups != 0) {
         recipeBrewCups = 0;
@@ -336,7 +349,7 @@ void setup() {
   /**
   * Homie specific settings
   */
-  Homie_setFirmware("senseo-wifi-wemos", "0.9.9");
+  Homie_setFirmware("senseo-wifi-wemos", "1.0.0");
   Homie_setBrand("SenseoWifi");
   //Homie.disableResetTrigger();
   Homie.disableLedFeedback();
