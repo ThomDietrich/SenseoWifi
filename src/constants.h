@@ -7,6 +7,8 @@
 #ifndef SenseoConstants_h
 #define SenseoConstants_h
 
+ #define senseoWifiFWVersion "1.0.0";
+
 // LED state machine
 // Measure your timings by activating debugging in ledChangedRoutine()
 static const int pulseDurLedSlow = 1000;                   // duration of one pulse when LED is blinking slow in milliseconds (state LED_SLOW)

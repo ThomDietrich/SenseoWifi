@@ -349,7 +349,7 @@ void setup() {
   /**
   * Homie specific settings
   */
-  Homie_setFirmware("senseo-wifi-wemos", "1.0.0");
+  Homie_setFirmware("senseo-wifi-wemos", senseoWifiFWVersion);
   Homie_setBrand("SenseoWifi");
   //Homie.disableResetTrigger();
   Homie.disableLedFeedback();
