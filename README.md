@@ -14,6 +14,7 @@ This project contains information and material regarding:
 
 - Soldering a **custom PCB** needed to bring Senseo onto a Wi-Fi
 - Connecting the custom PCB to the Senseo PCB
+- Compiling firmware with [PlatformIO](https://platformio.org/) (e.g. as plugin in [VisualStudioCode](https://code.visualstudio.com/))
 - Flashing the custom PCB with the **provided firmware**
 - Connecting to Wi-Fi and [MQTT](https://www.hivemq.com/mqtt-essentials)
 - Connecting to [openHAB](https://openhab.org) (or any other home automation solution)
