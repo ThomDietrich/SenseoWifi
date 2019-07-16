@@ -80,13 +80,80 @@ In the end the PCB will not be visible from the outside, powered from the inside
 ![](images/PCBv1.7.png)
 
 For now, please follow the details given in the schematics and the pictures located in the [images](images) folder.
+
+## Openhab-Config Example
+
+### mqtt.things
+```
+Bridge mqtt:systemBroker:LocalBroker [ host="your-broker-ip", secure=false ]
+{
+    Thing mqtt:topic:SenseoWiFi "SenseoWiFi" {
+    Channels:
+        Type string : Debug          "Debug"            [stateTopic="devices/senseo-wifi-home/machine/debug"]
+        Type string : OpState        "Zustand"          [stateTopic="devices/senseo-wifi-home/machine/opState"]
+        Type switch : OnOff          "OnOff"            [stateTopic="devices/senseo-wifi-home/machine/power", commandTopic="devices/senseo-wifi-home/machine/power/set", on="ON", off="OFF"]
+        Type string : Brew           "Brew"             [stateTopic="devices/senseo-wifi-home/machine/brew",commandTopic="devices/senseo-wifi-home/machine/brew/set"]
+        Type number : BrewedSize     "BrewedSize"       [stateTopic="devices/senseo-wifi-home/machine/brewedSize"]
+        Type string : OutOfWater     "OutOfWater"       [stateTopic="devices/senseo-wifi-home/machine/outOfWater"]
+        Type string : Recipe         "Recipe"           [stateTopic="devices/senseo-wifi-home/machine/recipe",commandTopic="devices/senseo-wifi-home/machine/recipe/set"]
+        Type string : CupAvailable   "Tasse vorh."      [stateTopic="devices/senseo-wifi-home/machine/cupAvailable"]
+        Type string : CupFull        "Tasse voll"       [stateTopic="devices/senseo-wifi-home/machine/cupFull"]
+        Type string : Online         "Online"           [stateTopic="devices/senseo-wifi-home/$online"]
+
+        Type string : version        "Version"          [ stateTopic="devices/senseo/$homie"]
+        Type string : name           "Name"             [ stateTopic="devices/senseo/$name"]
+        Type string : ip             "IP-address"       [ stateTopic="devices/senseo/$localip"]
+        Type string : mac            "MAC-address"      [ stateTopic="devices/senseo/$mac"]
+        Type string : fw_name        "Firmware Name"    [ stateTopic="devices/senseo/$fw/name"]
+        Type string : fw_version     "Firmware Version" [ stateTopic="devices/senseo/$fw/version"]
+        Type string : nodes          "Nodes"            [ stateTopic="devices/senseo/$nodes"]
+        Type string : implementation "Implementation"   [ stateTopic="devices/senseo/$implementation"]
+        Type string : interval       "Update interval"  [ stateTopic="devices/senseo/$stats/interval"]
+    }
+}
+```
+
+### SenseoWifi.items
+"expire binding":https://www.openhab.org/addons/bindings/expire1/ recommended for debug-value
+```
+String KU_Senseo_Debug         "Debug [%s]"                          {channel="mqtt:topic:SenseoWiFi:Debug", expire="10s"}
+String KU_Senseo_OpState       "Zustand [MAP(senseo-wifi.map):%s]"   {channel="mqtt:topic:SenseoWiFi:OpState"}
+Switch KU_Senseo_OnOff         "OnOff"                               {channel="mqtt:topic:SenseoWiFi:OnOff"}
+String KU_Senseo_Brew          "Brew"                                {channel="mqtt:topic:SenseoWiFi:Brew"}
+Number KU_Senseo_BrewedSize    "BrewedSize"                          {channel="mqtt:topic:SenseoWiFi:BrewedSize"}
+String KU_Senseo_OutOfWater    "OutOfWater"                          {channel="mqtt:topic:SenseoWiFi:OutOfWater" [profile="transform:MAP", function="senseo-wifi.map"]}
+String KU_Senseo_Recipe        "Recipe"                              {channel="mqtt:topic:SenseoWiFi:Recipe"}
+String KU_Senseo_CupAvailable  "Tasse vorh."                         {channel="mqtt:topic:SenseoWiFi:CupAvailable" [profile="transform:MAP", function="senseo-wifi.map"]}
+String KU_Senseo_CupFull       "Tasse voll"                          {channel="mqtt:topic:SenseoWiFi:CupFull" [profile="transform:MAP", function="senseo-wifi.map"]}
+String KU_Senseo_Online        "Online"                              {channel="mqtt:topic:SenseoWiFi:Online"}
+```
+
+### SenseoWifi.sitemap
+```
+sitemap testing label="Senseo-Tests"
+{
+    Frame label="Status" {
+        //Text item=KU_Senseo_Unreach label="Fehler [Maschine nicht verfügbar!]" visibility=[KU_Senseo_Online == "false"] valuecolor=["true"="red"]
+        Text item=KU_Senseo_OpState label="Aktueller Zustand"
+        Default item=KU_Senseo_Debug      label="Debug" visibility=[KU_Senseo_Debug != UNDEF] valuecolor=["red"]
+        Text item=KU_Senseo_OutOfWater label="Wassertank [Leer]" visibility=[KU_Senseo_OpState == SENSEO_NOWATER] valuecolor=[ON="maroon"] icon="water"
+        Switch item=KU_Senseo_CupAvailable label="Tasse vorhanden" icon="coffee_cup"
+        Switch item=KU_Senseo_CupFull label="Tasse voll" visibility=[KU_Senseo_CupAvailable == ON] icon="coffee_cup_hot"
+    }
+    Frame label="Steuerung" {
+        Switch item=KU_Senseo_OnOff label="Ein-/Ausschalten"
+        Switch item=KU_Senseo_Brew label="Kaffee Kochen" mappings=[1cup="☕", 2cup="☕☕"]
+    }
+}
+```
+
 Further details outstanding. Don't hesitate to open a support issue!
 
 Happy Hacking!
 
 ----
 
-#### Disclaimer and Legal
+# Disclaimer and Legal
 
 > *Philips* and *Senseo* are registered trademarks of *Philips GmbH*.
 >
