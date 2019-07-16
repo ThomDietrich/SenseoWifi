@@ -114,7 +114,7 @@ Bridge mqtt:systemBroker:LocalBroker [ host="your-broker-ip", secure=false ]
 ```
 
 ### SenseoWifi.items
-"expire binding":https://www.openhab.org/addons/bindings/expire1/ recommended for debug-value
+[expire binding](https://www.openhab.org/addons/bindings/expire1/) recommended for debug-value
 ```
 String KU_Senseo_Debug         "Debug [%s]"                          {channel="mqtt:topic:SenseoWiFi:Debug", expire="10s"}
 String KU_Senseo_OpState       "Zustand [MAP(senseo-wifi.map):%s]"   {channel="mqtt:topic:SenseoWiFi:OpState"}
