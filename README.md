@@ -135,15 +135,15 @@ String KU_Senseo_Online        "Online"                              {channel="m
 ```
 sitemap testing label="Senseo-Tests"
 {
-    Frame label="Status" {
-        //Text item=KU_Senseo_Unreach label="Fehler [Maschine nicht verfügbar!]" visibility=[KU_Senseo_Online == "false"] valuecolor=["true"="red"]
+    Text item=KU_Senseo_Online label="Fehler [Maschine nicht verfügbar!]" visibility=[KU_Senseo_Online == "false"] valuecolor=["false"="red"]
+    Frame label="Status" visibility=[KU_Senseo_Online == "true"] {
         Text item=KU_Senseo_OpState label="Aktueller Zustand"
         Default item=KU_Senseo_Debug      label="Debug" visibility=[KU_Senseo_Debug != UNDEF] valuecolor=["red"]
         Text item=KU_Senseo_OutOfWater label="Wassertank [Leer]" visibility=[KU_Senseo_OpState == SENSEO_NOWATER] valuecolor=[ON="maroon"] icon="water"
         Switch item=KU_Senseo_CupAvailable label="Tasse vorhanden" icon="coffee_cup"
         Switch item=KU_Senseo_CupFull label="Tasse voll" visibility=[KU_Senseo_CupAvailable == ON] icon="coffee_cup_hot"
     }
-    Frame label="Steuerung" {
+    Frame label="Steuerung" visibility=[KU_Senseo_Online == "true"] {
         Switch item=KU_Senseo_OnOff label="Ein-/Ausschalten"
         Switch item=KU_Senseo_Brew label="Kaffee Kochen" mappings=[1cup="☕", 2cup="☕☕"]
     }
