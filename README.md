@@ -82,7 +82,9 @@ In the end the PCB will not be visible from the outside, powered from the inside
 
 For now, please follow the details given in the schematics and the pictures located in the [images](images) folder.
 
-## Openhab-Config Example
+## openHAB Configuration Example
+
+The following openHAB configuration allows integration of the Senseo machine with the home automation solution openHAB. Please make sure the machine is connected to your MQTT broker. Insert the MQTT broker IP and replace "senseo-wifi-home" by your device name in the below example.
 
 ### mqtt.things
 ```
