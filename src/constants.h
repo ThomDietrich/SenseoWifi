@@ -29,6 +29,6 @@ static const int CupDebounceInterval = 500;
 static const int LedIgnoreChangeDuration = 5;
 
 // Duration of button "press" (in milliseconds)
-static const int pressDuration = 100;
+static const int pressDuration = 150;
 
 #endif
