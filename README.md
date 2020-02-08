@@ -71,6 +71,9 @@ In the end the PCB will not be visible from the outside, powered from the inside
 
 ![](images/DSC09587.JPG)
 
+**Power Consumption:**
+The question was raised how much energy is consumed by the modification. The PCB consumes approx. 110mA. Assuming the Senseo machine is connected to power 24/7, the additional electronics raise your electrical bill by 2,00€ per year.
+
 ### Steps
 
 1. Solder the custom PCB according to the schematics provided here (designed in [Fritzing](http://fritzing.org))
