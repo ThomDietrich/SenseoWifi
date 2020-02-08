@@ -23,7 +23,9 @@ This project contains information and material regarding:
 
 ![](images/SenseoWifi-openHAB.png)
 
-### Compatible with:
+### Compatibility
+
+This project is comatible with:
 
 - Philips Senseo HD7810
 - Philips Senseo HD7811
@@ -33,22 +35,21 @@ This project contains information and material regarding:
 
 ## Features
 
-After implementing the steps below your Senseo will offer the following new features:
+After implementing the steps below your Senseo coffee machine will offer the following new features:
 
-- Inform about the current state (Standby, Brewing, ...) of the machine
-- Notify about an empty water tank
-- Remote control the machine via MQTT
-- Go through a complete brewing cycle automatically (Turn on, brew, turn off)
-- Over-the-air (OTA) firmware update
+- Inform about the current state (Standby, Brewing, ...) of the machine via Wifi/MQTT
+- Notify about an empty water tank via Wifi/MQTT
+- Remote control the machine via Wifi/MQTT commands
+- Go through a complete brewing cycle automatically (Turn on, brew, turn off) upon Wifi/MQTT command
 - Audio feedback via a built-in speaker (optional)
 - Detect a cup via an optical sensor (optional)
-- Collect usage statistics
+- Collect usage statistics, e.g. stored in InfluxDB and vidualized in Grafana
 
 ## Hardware Modification
 
 The first challenge of this project is to hack the Senseo machine electronics.
 You need to solder and connect a custom PCB to the machine.
-In the end the PCB will not be visible from the outside, powered from the inside, connected via Wi-Fi and programmed via OTA.
+In the end the PCB will not be visible from the outside, powered from the inside, connected via Wi-Fi and programmed over-the-air (OTA).
 
 **⚠⚠⚠ Attention! For your own safety do not connect AC power while opened up. ⚠⚠⚠**
 
@@ -72,21 +73,70 @@ In the end the PCB will not be visible from the outside, powered from the inside
 
 ### Steps
 
-1. Solder the custom PCB according to the schematics designed in [Fritzing](http://fritzing.org)
+1. Solder the custom PCB according to the schematics provided here (designed in [Fritzing](http://fritzing.org))
 2. Wire the custom PCB to the Senseo PCB to interface with the Senseo LED and buttons
 3. Add the optical sensor to the Senseo housing (optional)
-4. Connect the additional power supply
-5. Include a button accessible from the bottom to reset the firmware settings
+4. Connect the additional power supply to the senseo power cable and connect to custom PCB
+5. Connect a simple push button to reset the firmware settings (through one of the holes in the bottom is recommended)
+6. Hot clue the PCB and the optical sensor inside the Senseo machine
+7. Connect a USB cable to continue with firmware programming
 
-![](images/PCBv1.7.png)
+Please follow the details given in the schematics and the pictures in the [images](images) folder, which should make everything pretty clear.
+Do not hessitate to create a support ticket on GitHub if we missed anything.
+A pull request to improve this README is always welcome.
 
-For now, please follow the details given in the schematics and the pictures located in the [images](images) folder.
+![schematics](images/PCBv1.7.png)
 
-## openHAB Configuration Example
+![installation example inside the machine](images/DSC09604.jpg)
+
+## Firmware Upload
+
+The WeMos microcontroller needs to be programmed with the code provided in this repository.
+Be aware that the custom functionality is build on top of the excellent [Homie v3.0](https://github.com/homieiot/homie-esp8266/) framework.
+
+An MQTT broker is needed in your network (e.g. mosquitto).
+
+Please follow these instructions:
+
+1. Install PlatformIO via Visual Studio Code as decribed [here](https://platformio.org/platformio-ide) or upgrade your existing installation
+2. Open PlatformIO and load a latest copy of this repository
+3. Connect the custom PCB via USB cable to your PC and check the devices view of PlatformIO to verify
+4. Transfer the firmware and the configuration web interface to the microcontroller.
+  The full list of PlatformIO project tasks is:
+  - Clean
+  - Erase Flash
+  - Build
+  - Upload
+  - Upload File System image
+  - Monitor
+  If any of the steps ends in a connection error dis- and reconnect the USB cable.
+  You were successful when the monitoring terminal shows the SenseoWifi firmware version.
+  For initial hardware testing see below
+5. Use a smartphone to connect to the provided Wifi, you will be redirected to a configuration web interface
+6. Provide your Wifi, MQTT, and other settings (we recommend the default homie base topic)
+7. Use an MQTT client to inspect messages sent to the MQTT broker.
+  You were successful when the message "senseo-wifi" is published to the topic `homie/senseo-wifi/machine/$name`
+8. Disconnect the USB cable and connect the Senseo machine to power. The machine should once again start communicating via MQTT
+
+**For Hardware testing:** A special piece of code is provided to test that your fresh hardware modifications are working.
+Enable `testIO()` in `SenseoWifi.cpp` and check `testIO.cpp` for details.
+
+## Usage
+
+If everything worked out your machine now communicates its status and accepts commands via MQTT.
+You are now ready to interact with the machine and integrate it with other systems.
+
+## Smart Home Integration
+
+With the machine connected to Wifi and MQTT, you can now link a smart home system to the important MQTT topics to integrate the machine with the rest of your smart home.
+
+### openHAB Configuration Example
 
 The following openHAB configuration allows integration of the Senseo machine with the home automation solution openHAB. Please make sure the machine is connected to your MQTT broker. Insert the MQTT broker IP and replace "senseo-wifi-home" by your device name in the below example.
 
-### mqtt.things
+**Note:** Not updated to latest firmware changes. 
+
+openHAB things file `mqtt.things`:
 ```
 Bridge mqtt:systemBroker:LocalBroker [ host="your-broker-ip", secure=false ]
 {
@@ -116,8 +166,7 @@ Bridge mqtt:systemBroker:LocalBroker [ host="your-broker-ip", secure=false ]
 }
 ```
 
-### SenseoWifi.items
-[expire binding](https://www.openhab.org/addons/bindings/expire1/) recommended for debug-value
+openHAB items file `SenseoWifi.items`:
 ```
 String KU_Senseo_Debug         "Debug [%s]"                          {channel="mqtt:topic:SenseoWiFi:Debug", expire="10s"}
 String KU_Senseo_OpState       "Zustand [MAP(senseo-wifi.map):%s]"   {channel="mqtt:topic:SenseoWiFi:OpState"}
@@ -131,7 +180,9 @@ String KU_Senseo_CupFull       "Tasse voll"                          {channel="m
 String KU_Senseo_Online        "Online"                              {channel="mqtt:topic:SenseoWiFi:Online"}
 ```
 
-### SenseoWifi.sitemap
+[expire binding](https://www.openhab.org/addons/bindings/expire1/) recommended for debug-value.
+
+openHAB sitemap example `SenseoWifi.sitemap`:
 ```
 sitemap testing label="Senseo-Tests"
 {
@@ -149,6 +200,8 @@ sitemap testing label="Senseo-Tests"
     }
 }
 ```
+
+## Contribution
 
 Further details outstanding. Don't hesitate to open a support issue!
 

@@ -8,7 +8,7 @@
 #include "pins.h"
 
 inline void testIO() {
-  Serial.println("\n================================");
+  Serial.println("\n=================================");
   Serial.println("   ☕☕☕ Hello Senseo! ☕☕☕");
   Serial.println("   Executing Test Routine");
   Serial.println("==================================");

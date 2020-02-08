@@ -1,4 +1,6 @@
 /data/homie/config.json
+.vscode
+.pio
 .pioenvs
 .piolibdeps
 .clang_complete

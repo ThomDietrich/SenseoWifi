@@ -1,0 +1,7 @@
+{
+  "name": "Senseo-Wifi",
+  "device_id": "senseo-wifi-myuniqueid",
+  "ota": {
+    "enabled": true
+  }
+}
