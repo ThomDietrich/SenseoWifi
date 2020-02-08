@@ -103,15 +103,17 @@ Please follow these instructions:
 3. Connect the custom PCB via USB cable to your PC and check the devices view of PlatformIO to verify
 4. Transfer the firmware and the configuration web interface to the microcontroller.
   The full list of PlatformIO project tasks is:
-  - Clean
-  - Erase Flash
-  - Build
-  - Upload
-  - Upload File System image
-  - Monitor
-  If any of the steps ends in a connection error dis- and reconnect the USB cable.
-  You were successful when the monitoring terminal shows the SenseoWifi firmware version.
-  For initial hardware testing see below
+   - Clean
+   - Erase Flash
+   - Build
+   - Upload
+   - Upload File System image
+   - Monitor
+  
+   If any of the steps ends in a connection error dis- and reconnect the USB cable.
+   You were successful when the monitoring terminal shows the SenseoWifi firmware version.
+   For initial hardware testing see below
+
 5. Use a smartphone to connect to the provided Wifi, you will be redirected to a configuration web interface
 6. Provide your Wifi, MQTT, and other settings (we recommend the default homie base topic)
 7. Use an MQTT client to inspect messages sent to the MQTT broker.
@@ -133,6 +135,8 @@ With the machine connected to Wifi and MQTT, you can now link a smart home syste
 ### openHAB Configuration Example
 
 The following openHAB configuration allows integration of the Senseo machine with the home automation solution openHAB. Please make sure the machine is connected to your MQTT broker. Insert the MQTT broker IP and replace "senseo-wifi-home" by your device name in the below example.
+
+The [expire binding](https://www.openhab.org/addons/bindings/expire1/) is recommended for debug-value.
 
 **Note:** Not updated to latest firmware changes. 
 
@@ -179,8 +183,6 @@ String KU_Senseo_CupAvailable  "Tasse vorh."                         {channel="m
 String KU_Senseo_CupFull       "Tasse voll"                          {channel="mqtt:topic:SenseoWiFi:CupFull" [profile="transform:MAP", function="senseo-wifi.map"]}
 String KU_Senseo_Online        "Online"                              {channel="mqtt:topic:SenseoWiFi:Online"}
 ```
-
-[expire binding](https://www.openhab.org/addons/bindings/expire1/) recommended for debug-value.
 
 openHAB sitemap example `SenseoWifi.sitemap`:
 ```
