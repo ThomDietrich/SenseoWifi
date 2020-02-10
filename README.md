@@ -61,7 +61,7 @@ In the end the PCB will not be visible from the outside, powered from the inside
 |------|-------------|
 | 1× Custom PCB | See [`SenseoWifi-PCB` folder](SenseoWifi-PCB) for schematic |
 | 1× WeMos D1 Mini | Microcontroller, [learn more…](https://wiki.wemos.cc/products:d1:d1_mini) |
-| 4× Sharp PC817 | Optocoupler interfacing with the Senseo board ([datasheet](http://www.sharp-world.com/products/device/lineup/data/pdf/datasheet/pc817xnnsz_e.pdf)) |
+| 4× Sharp PC817 | Optocoupler interfacing with the Senseo board ([datasheet](http://www.sharp-world.com/products/device/lineup/data/pdf/datasheet/pc817xnnsz_e.pdf)). Thanks to these, the Senseo can be connected to AC power and to your PC via USB at the same time. Try to avoid this constellation and be cautious with active AC power. |
 | 3× 470Ω Resistor | |
 | 1× 1.5kΩ Resistor | |
 | 1× Push button | To reset the microcontroller from the outside |
@@ -71,26 +71,27 @@ In the end the PCB will not be visible from the outside, powered from the inside
 | 1× 150Ω Resistor | *Optional* - Size depends on buzzer |
 | 1× TCRT5000 | *Optional* - To detect a cup. Reflective Optical Sensor, Regulated Module (e.g. [ebay.de](https://ebay.us/3Kf6fq)) |
 
-![](images/DSC09587.JPG)
+![](images/DSC09587.jpg)
 
 **Power Consumption:**
-The question was raised how much energy is consumed by the modification. The PCB consumes approx. 110mA. Assuming the Senseo machine is connected to power 24/7, the additional electronics raise your electrical bill by 2,00€ per year.
+The question was raised how much energy is consumed by the modification. The PCB consumes approx. 110mA.
+Assuming the Senseo machine is connected to power 24/7, the additional electronics raise your electrical bill by 2.00€ per year.
 
 ### Steps
 
-1. Solder the custom PCB according to the schematics provided here (designed in [Fritzing](http://fritzing.org))
-2. Wire the custom PCB to the Senseo PCB to interface with the Senseo LED and buttons
-3. Add the optical sensor to the Senseo housing (optional)
-4. Connect the additional power supply to the senseo power cable and connect to custom PCB
-5. Connect a simple push button to reset the firmware settings (through one of the holes in the bottom is recommended)
-6. Hot clue the PCB and the optical sensor inside the Senseo machine
-7. Connect a USB cable to continue with firmware programming
+1. Solder the custom PCB according to the schematics provided in the `SenseoWifi-PCB` folder (designed in [Fritzing](http://fritzing.org))
+2. Hot clue the custom PCB inside the Senseo machine in a free position [such as shown here](images/DSC09604.jpg)
+3. Wire the custom PCB via the "Senseo Connections" header (angled pin headers recommended) to interface with the Senseo PCB. The solder pads to use for the LED, the buttons, and ground connection are shown on [this image](images/DSC09627.jpg)
+4. Connect a simple push button (the configuration reset button) to J3 and hot clue in the [base of the Senseo housing](images/resetbutton.jpg).
+5. Connect the additional [power supply](images/DSC09646.jpg) to the Senseo power cable and wire to J4
+6. Prepare a [small cutout](images/tcrt-cutout.jpg) in the Senseo front and [hot clue from behind](images/DSC09604.jpg). Connect to the TCRT header
+7. Connect a USB cable to continue with firmware programming. Do not connect AC power
 
 Please follow the details given in the schematics and the pictures in the [images](images) folder, which should make everything pretty clear.
 Do not hessitate to create a support ticket on GitHub if we missed anything.
 A pull request to improve this README is always welcome.
 
-![schematics](images/PCBv1.7.png)
+![schematics](images/PCBv1.8.png)
 
 ## Firmware Upload
 
@@ -103,7 +104,7 @@ Please follow these instructions:
 
 1. Install PlatformIO via Visual Studio Code as decribed [here](https://platformio.org/platformio-ide) or upgrade your existing installation
 2. Open PlatformIO and load a latest copy of this repository
-3. Connect the custom PCB via USB cable to your PC and check the devices view of PlatformIO to verify
+3. Connect your Senseo via the USB cable to your PC (do not connect the Senseo to AC power!) and check the devices view of PlatformIO to verify
 4. Transfer the firmware and the configuration web interface to the microcontroller.
   The full list of PlatformIO project tasks is:
    - Clean
@@ -117,14 +118,20 @@ Please follow these instructions:
    You were successful when the monitoring terminal shows the SenseoWifi firmware version.
    For initial hardware testing see below
 
-5. Use a smartphone to connect to the provided Wifi, you will be redirected to a configuration web interface
+5. Use a smartphone to connect to the provided Wifi, you will be redirected to a configuration web frontend
 6. Provide your Wifi, MQTT, and other settings (we recommend the default homie base topic)
 7. Use an MQTT client to inspect messages sent to the MQTT broker.
   You were successful when the message "senseo-wifi" is published to the topic `homie/senseo-wifi/machine/$name`
-8. Disconnect the USB cable and connect the Senseo machine to power. The machine should once again start communicating via MQTT
+8. Disconnect the USB cable, close the Senseo housing, and connect the Senseo machine to AC power.
+  The machine should once again start communicating via MQTT
 
 **For Hardware testing:** A special piece of code is provided to test that your fresh hardware modifications are working.
 Enable `testIO()` in `SenseoWifi.cpp` and check `testIO.cpp` for details.
+
+**Configuration mode:** The configuration web frontend is only available when in configuration mode, i.e. when not yet configured.
+Press the configuration reset button previously mounted in the base of the machine for 5 seconds to resets the firmware configuration.
+The machine switches in configuration mode and provides a Wifi accesspoint, which upon connection once again presents the configuration web frontend.
+Follow these instructions if you ever loose connection, or want to change your Wifi or MQTT settings.
 
 ## Usage
 
