@@ -71,7 +71,7 @@ In the end the PCB will not be visible from the outside, powered from the inside
 | 1× 150Ω Resistor | *Optional* - Size depends on buzzer |
 | 1× TCRT5000 | *Optional* - To detect a cup. Reflective Optical Sensor, Regulated Module (e.g. [ebay.de](https://ebay.us/3Kf6fq)) |
 
-![](images/DSC09587.jpg)
+![](images/PCBv1.6-assembled.jpg)
 
 **Power Consumption:**
 The question was raised how much energy is consumed by the modification. The PCB consumes approx. 110mA.
