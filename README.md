@@ -33,6 +33,8 @@ This project is comatible with:
 - Philips Senseo HD7817
 - … and most probably all similar models with one LED and three buttons
 
+![installation example inside the machine](images/DSC09604.jpg)
+
 ## Features
 
 After implementing the steps below your Senseo coffee machine will offer the following new features:
@@ -89,8 +91,6 @@ Do not hessitate to create a support ticket on GitHub if we missed anything.
 A pull request to improve this README is always welcome.
 
 ![schematics](images/PCBv1.7.png)
-
-![installation example inside the machine](images/DSC09604.jpg)
 
 ## Firmware Upload
 
