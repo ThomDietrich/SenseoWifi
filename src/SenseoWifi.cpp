@@ -403,7 +403,7 @@ void setup() {
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupFull").setName("Cup Full");
 
   if (BuzzerSetting.get()) tone(beeperPin, 1536, 2000);
-
+  Homie.onEvent(onHomieEvent);
   Homie.setup();
 }
 
