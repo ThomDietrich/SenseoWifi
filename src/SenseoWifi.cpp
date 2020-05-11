@@ -14,8 +14,6 @@ Released under some license.
 #include "constants.h"
 #include "testIO.cpp"
 
-void ICACHE_RAM_ATTR ledChangedHandler();
-
 SenseoLed mySenseoLed(ocSenseLedPin);
 SenseoSM mySenseoSM;
 SenseoControl myControl(ocPressPowerPin, ocPressLeftPin, ocPressRightPin);
@@ -253,12 +251,12 @@ void senseoStateEntryAction() {
   }
 }
 
-void onHomieEvent(const HomieEvent &event)
-{
-  // The device rebooted when attachInterrupt was called in setup()
-  // before Wifi was connected and interrupts were already coming in.
-  switch (event.type)
-  {
+/**
+* The device rebooted when attachInterrupt was called in setup()
+* before Wifi was connected and interrupts were already coming in.
+*/
+void onHomieEvent(const HomieEvent &event) {
+  switch (event.type) {
   case HomieEventType::WIFI_CONNECTED:
     attachInterrupt(digitalPinToInterrupt(ocSenseLedPin), ledChangedHandler, CHANGE);
     break;
