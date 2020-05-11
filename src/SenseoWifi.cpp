@@ -34,7 +34,7 @@ int recipeBrewCups = 0;
 /**
 * Called by the LED changed interrupt
 */
-void ledChangedHandler() {
+void ICACHE_RAM_ATTR ledChangedHandler() {
   mySenseoLed.pinStateToggled();
 }
 
@@ -252,12 +252,27 @@ void senseoStateEntryAction() {
 }
 
 /**
+* The device rebooted when attachInterrupt was called in setup()
+* before Wifi was connected and interrupts were already coming in.
+*/
+void onHomieEvent(const HomieEvent &event) {
+  switch (event.type) {
+  case HomieEventType::WIFI_CONNECTED:
+    attachInterrupt(digitalPinToInterrupt(ocSenseLedPin), ledChangedHandler, CHANGE);
+    break;
+  case HomieEventType::WIFI_DISCONNECTED:
+    detachInterrupt(digitalPinToInterrupt(ocSenseLedPin));
+    break;
+  default:
+    break;
+  }
+}
+
+/**
 *
 */
 void setupHandler() {
   if (BuzzerSetting.get()) tone(beeperPin, 2048, 500);
-
-  attachInterrupt(digitalPinToInterrupt(ocSenseLedPin), ledChangedHandler, CHANGE);
 
   Homie.getLogger() << endl << "☕☕☕☕ Enjoy your SenseoWifi ☕☕☕☕" << endl << endl;
 
@@ -386,7 +401,7 @@ void setup() {
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupFull").setName("Cup Full");
 
   if (BuzzerSetting.get()) tone(beeperPin, 1536, 2000);
-
+  Homie.onEvent(onHomieEvent);
   Homie.setup();
 }
 
