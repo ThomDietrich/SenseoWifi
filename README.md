@@ -100,7 +100,7 @@ Be aware that the custom functionality is build on top of the excellent [Homie v
 
 An MQTT broker is needed in your network (e.g. mosquitto).
 
-Please follow these instructions:
+Please follow these instructions (last tested 2021-10-01):
 
 1. Install PlatformIO via Visual Studio Code as decribed [here](https://platformio.org/platformio-ide) or upgrade your existing installation
 2. Open PlatformIO and load a latest copy of this repository
@@ -116,7 +116,7 @@ Please follow these instructions:
   
    If any of the steps ends in a connection error dis- and reconnect the USB cable.
    You were successful when the monitoring terminal shows the SenseoWifi firmware version.
-   For initial hardware testing see below
+   For initial hardware testing see below.
 
 5. Use a smartphone to connect to the provided Wifi, you will be redirected to a configuration web frontend
 6. Provide your Wifi, MQTT, and other settings (we recommend the default homie base topic)
@@ -137,10 +137,178 @@ Follow these instructions if you ever loose connection, or want to change your W
 
 If everything worked out your machine now communicates its status and accepts commands via MQTT.
 You are now ready to interact with the machine and integrate it with other systems.
+Please check the source code of `SenseoWifi.cpp` for details on states and commands. 
 
 ## Smart Home Integration
 
 With the machine connected to Wifi and MQTT, you can now link a smart home system to the important MQTT topics to integrate the machine with the rest of your smart home.
+
+### Home Assistant Configuration Example
+
+The following example integrates the Senseo machine with the home automation solution Home Assistant.
+Please make sure the machine is connected to your MQTT broker and adapt the machine name in the topic.
+
+Home Assistant config file `packages/senseo_wifi.yaml`:
+```yaml
+input_boolean:
+  senseowifi_brew_normal:
+    name: "SenseoWifi Auslöser einfache Tasse brühen"
+    initial: off
+    icon: mdi:coffee
+
+  senseowifi_brew_double:
+    name: "SenseoWifi Auslöser große Tasse brühen"
+    initial: off
+    icon: mdi:coffee
+
+  senseowifi_buzzer_tone1:
+    name: "SenseoWifi Auslöser Buzzer Tone1"
+    initial: off
+    icon: mdi:coffee
+
+switch:
+  - platform: mqtt
+    name: SenseoWifi
+    unique_id: uniqueid__senseo_wifi_power
+    icon: mdi:power
+    #
+    state_topic: "homie/senseo-wifi-rf21/machine/power"
+    state_on: "true"
+    state_off: "false"
+    #
+    command_topic: "homie/senseo-wifi-rf21/machine/power/set"
+    payload_on: "true"
+    payload_off: "false"
+    #
+    availability_topic: "homie/senseo-wifi-rf21/$state"
+    payload_available: "ready"
+    payload_not_available: "lost"
+
+sensor:
+  - platform: mqtt
+    name: SenseoWifi Letzte Brühmenge
+    unique_id: uniqueid__senseo_wifi_brewed_size
+    icon: mdi:coffee-maker
+    #
+    state_topic: "homie/senseo-wifi-rf21/machine/brewedSize"
+    #
+    availability_topic: "homie/senseo-wifi-rf21/$state"
+    payload_available: "ready"
+    payload_not_available: "lost"
+
+  - platform: mqtt
+    name: SenseoWifi Operationszustand
+    unique_id: uniqueid__senseo_wifi_opstate
+    icon: mdi:state-machine
+    #
+    state_topic: "homie/senseo-wifi-rf21/machine/opState"
+    #
+    availability_topic: "homie/senseo-wifi-rf21/$state"
+    payload_available: "ready"
+    payload_not_available: "lost"
+
+  - platform: mqtt
+    name: SenseoWifi Nachrichten
+    unique_id: uniqueid__senseo_wifi_debug
+    icon: mdi:comment-text-multiple-outline
+    #
+    state_topic: "homie/senseo-wifi-rf21/machine/debug"
+    #
+    availability_topic: "homie/senseo-wifi-rf21/$state"
+    payload_available: "ready"
+    payload_not_available: "lost"
+
+binary_sensor:
+  - platform: mqtt
+    name: SenseoWifi Wassertank alle
+    unique_id: uniqueid__senseo_wifi_outofwater
+    icon: mdi:water-off-outline
+    #
+    state_topic: "homie/senseo-wifi-rf21/machine/outOfWater"
+    payload_on: "true"
+    payload_off: "false"
+    #
+    availability_topic: "homie/senseo-wifi-rf21/$state"
+    payload_available: "ready"
+    payload_not_available: "lost"
+
+  - platform: mqtt
+    name: SenseoWifi Tasse vorhanden
+    unique_id: uniqueid__senseo_wifi_cup_available
+    icon: mdi:coffee-outline
+    #
+    state_topic: "homie/senseo-wifi-rf21/machine/cupAvailable"
+    payload_on: "true"
+    payload_off: "false"
+    #
+    availability_topic: "homie/senseo-wifi-rf21/$state"
+    payload_available: "ready"
+    payload_not_available: "lost"
+
+  - platform: mqtt
+    name: SenseoWifi Tasse befüllt
+    unique_id: uniqueid__senseo_wifi_cup_full
+    icon: mdi:coffee
+    #
+    state_topic: "homie/senseo-wifi-rf21/machine/cupFull"
+    payload_on: "true"
+    payload_off: "false"
+    #
+    availability_topic: "homie/senseo-wifi-rf21/$state"
+    payload_available: "ready"
+    payload_not_available: "lost"
+
+automation:
+  - id: "1611257531404"
+    alias: Regel SenseoWifi Auslöser normale Tasse brühen
+    trigger:
+      platform: state
+      entity_id: input_boolean.senseowifi_brew_normal
+      to: "on"
+    action:
+      - service: mqtt.publish
+        data:
+          topic: "homie/senseo-wifi-rf21/machine/brew/set"
+          payload: "1cup"
+
+  - id: "1611257531405"
+    alias: Regel SenseoWifi Auslöser große Tasse brühen
+    trigger:
+      platform: state
+      entity_id: input_boolean.senseowifi_brew_double
+      to: "on"
+    action:
+      - service: mqtt.publish
+        data:
+          topic: "homie/senseo-wifi-rf21/machine/brew/set"
+          payload: "2cup"
+
+  - id: "1611257531406"
+    alias: Regel SenseoWifi update beim Ausschalten
+    trigger:
+      platform: state
+      entity_id: binary_sensor.senseowifi_brew
+      to: "off"
+    action:
+      - service: input_boolean.turn_off
+        data:
+          entity_id: input_boolean.senseowifi_brew_normal
+      - service: input_boolean.turn_off
+        data:
+          entity_id: input_boolean.senseowifi_brew_double
+
+  - id: "1611257542501"
+    alias: Regel SenseoWifi Auslöser Buzzer
+    trigger:
+      platform: state
+      entity_id: input_boolean.senseowifi_buzzer_tone1
+      to: "on"
+    action:
+      - service: mqtt.publish
+        data:
+          topic: "homie/senseo-wifi-rf21/machine/buzzer/set"
+          payload: "tone1"
+```
 
 ### openHAB Configuration Example
 

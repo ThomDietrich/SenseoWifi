@@ -120,6 +120,31 @@ bool brewHandler(const HomieRange& range, const String& value) {
 }
 
 /**
+* Called by Homie upon an MQTT message to '.../buzzer'.
+*/
+bool buzzerHandler(const HomieRange& range, const String& value) {
+  /**
+  * Catch incorrect messages
+  */
+  if (value != "tone1" && value !="tone2" && value !="tone3") {
+    senseoNode.setProperty("debug").send("buzzer: malformed message content. Allowed: [tone1,tone2,tone3].");
+    return false;
+  }
+
+  if (!BuzzerSetting.get()) {
+    senseoNode.setProperty("debug").send("buzzer: not configured.");
+    return false;
+  }
+
+  senseoNode.setProperty("buzzer").send(value);
+  if (value == "tone1") tone(beeperPin, 4096, 300);
+  if (value == "tone2") tone(beeperPin, 2048, 300);
+  if (value == "tone3") tone(beeperPin, 1024, 300);
+  senseoNode.setProperty("buzzer").send("");
+  return true;
+}
+
+/**
 * Senseo state machine, transition reaction: exit actions
 */
 void senseoStateExitAction() {
@@ -371,7 +396,7 @@ void setup() {
   /**
   * Homie specific settings
   */
-  Homie_setFirmware("senseo-wifi", "1.2.0");
+  Homie_setFirmware("senseo-wifi", "1.3.1");
   Homie_setBrand("SenseoWifi");
   //Homie.disableResetTrigger();
   Homie.disableLedFeedback();
@@ -390,8 +415,7 @@ void setup() {
   * Homie: Advertise custom SenseoWifi MQTT topics
   */
   senseoNode.advertise("debug").setName("Debugging Information").setDatatype("string").setRetained(false);
-  senseoNode.advertise("opState").setName("Operational State")
-            .setDatatype("enum").setFormat("SENSEO_unknown,SENSEO_OFF,SENSEO_HEATING,SENSEO_READY,SENSEO_BREWING,SENSEO_NOWATER");
+  senseoNode.advertise("opState").setName("Operational State").setDatatype("enum").setFormat("SENSEO_unknown,SENSEO_OFF,SENSEO_HEATING,SENSEO_READY,SENSEO_BREWING,SENSEO_NOWATER");
   senseoNode.advertise("power").setName("Power").setDatatype("boolean").settable(powerHandler);
   senseoNode.advertise("brew").setName("Brew").settable(brewHandler).setDatatype("enum").setFormat("1cup,2cup");
   senseoNode.advertise("brewedSize").setName("Brew Size").setDatatype("string").setRetained(false);
@@ -399,7 +423,8 @@ void setup() {
   senseoNode.advertise("recipe").setName("Receipt").setDatatype("string").setRetained(false);
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupAvailable").setName("Cup Available");
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupFull").setName("Cup Full");
-
+  if (BuzzerSetting.get()) senseoNode.advertise("buzzer").setName("Buzzer").settable(buzzerHandler).setDatatype("enum").setFormat("tone1,tone2,tone3");
+  
   if (BuzzerSetting.get()) tone(beeperPin, 1536, 2000);
   Homie.onEvent(onHomieEvent);
   Homie.setup();
