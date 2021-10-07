@@ -170,10 +170,17 @@ input_boolean:
     initial: off
     icon: mdi:coffee
 
-  senseowifi_buzzer_tone1:
-    name: "SenseoWifi Auslöser Buzzer Tone1"
+  senseowifi_brew_double_automated:
+    name: "SenseoWifi Flag automatisch große Tasse brühen"
     initial: off
     icon: mdi:coffee
+
+  senseowifi_buzzer_tone:
+    name: "SenseoWifi Auslöser Buzzer Tone"
+    initial: off
+    icon: mdi:coffee
+
+################################################################################
 
 switch:
   - platform: mqtt
@@ -306,6 +313,8 @@ sensor:
     payload_available: "ready"
     payload_not_available: "lost"
 
+  ################################################################################
+
   - platform: template
     sensors:
       senseowifi_uptime_since:
@@ -319,6 +328,8 @@ sensor:
           {% endif %}
         icon_template: mdi:calendar-clock
         device_class: timestamp
+
+################################################################################
 
 homeassistant:
   customize:
@@ -342,6 +353,8 @@ homeassistant:
       friendly_name: "SenseoWifi Uptime"
     sensor.senseowifi_rssi:
       friendly_name: "SenseoWifi WLAN Signalstärke (RSSI)"
+
+################################################################################
 
 automation:
   - id: "1611257531404"
@@ -376,15 +389,103 @@ automation:
     alias: Regel SenseoWifi Auslöser Buzzer
     trigger:
       platform: state
-      entity_id: input_boolean.senseowifi_buzzer_tone1
+      entity_id: input_boolean.senseowifi_buzzer_tone
       to: "on"
     action:
       - service: mqtt.publish
         data:
           topic: "homie/senseo-wifi-rf21/machine/buzzer/set"
-          payload: "tone1"
+          payload: "tone4" # 1, 2, 3, 4
       - service: input_boolean.turn_off
-        entity_id: input_boolean.senseowifi_buzzer_tone1
+        entity_id: input_boolean.senseowifi_buzzer_tone
+
+  ################################################################################
+
+  - id: "1611257542502"
+    alias: Regel SenseoWifi Erinnerungston bei voller Tasse
+    trigger:
+      platform: state
+      entity_id: binary_sensor.senseowifi_cup_full
+      to: "on"
+    mode: single
+    action:
+      - delay:
+          minutes: 3
+      - repeat:
+          while:
+            - condition: state
+              entity_id: binary_sensor.senseowifi_cup_full
+              state: "on"
+          sequence:
+            - service: mqtt.publish
+              data:
+                topic: "homie/senseo-wifi-rf21/machine/buzzer/set"
+                payload: "tone3"
+            - delay:
+                minutes: 1
+
+  ################################################################################
+
+  - id: "1611257542601"
+    alias: Regel SenseoWifi automatisch brühen (Schritt 1)
+    trigger:
+      platform: state
+      entity_id: input_boolean.senseowifi_brew_double_automated
+      to: "on"
+    condition:
+      - condition: state
+        entity_id: switch.senseowifi_power
+        state: "off"
+    action:
+      - service: switch.turn_on
+        entity_id: switch.senseowifi_power
+
+  - id: "1611257542602"
+    alias: Regel SenseoWifi automatisch brühen (Schritt 2)
+    trigger:
+      - platform: state
+        entity_id: sensor.senseowifi_opstate
+        to: "SENSEO_READY"
+      - platform: state
+        entity_id: input_boolean.senseowifi_brew_double_automated
+        to: "on"
+    condition:
+      - condition: state
+        entity_id: switch.senseowifi_power
+        state: "on"
+      - condition: state
+        entity_id: binary_sensor.senseowifi_water_available
+        state: "on"
+      - condition: state
+        entity_id: binary_sensor.senseowifi_cup_available
+        state: "on"
+      - condition: state
+        entity_id: binary_sensor.senseowifi_cup_full
+        state: "off"
+      - condition: state
+        entity_id: input_boolean.senseowifi_brew_double_automated
+        state: "on"
+    action:
+      - service: mqtt.publish
+        data:
+          topic: "homie/senseo-wifi-rf21/machine/brew/set"
+          payload: "2cup"
+
+  - id: "1611257542603"
+    alias: Regel SenseoWifi automatisch brühen (Schritt 3)
+    trigger:
+      platform: state
+      entity_id: sensor.senseowifi_opstate
+      from: "SENSEO_BREWING"
+    condition:
+      - condition: state
+        entity_id: input_boolean.senseowifi_brew_double_automated
+        state: "on"
+    action:
+      - service: switch.turn_off
+        entity_id: switch.senseowifi_power
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.senseowifi_brew_double_automated
 ```
 
 Lovelace configuration:
