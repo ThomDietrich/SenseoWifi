@@ -40,7 +40,7 @@ void ICACHE_RAM_ATTR ledChangedHandler() {
 
 /**
 * Called by Homie upon an MQTT message to '.../power'
-* No MQTT response is sent from this routine, as pessimistic feedback will be handled in the state machine.
+* MQTT response is sent from this routine, as pessimistic feedback from state machine is too slow and triggers a timeout in e.g. Home Assistant.
 */
 bool powerHandler(const HomieRange& range, const String& value) {
   if (value != "true" && value !="false" && value != "reset") {
@@ -50,11 +50,14 @@ bool powerHandler(const HomieRange& range, const String& value) {
 
   if (value == "true" && mySenseoSM.getState() == SENSEO_OFF) {
     myControl.pressPowerButton();
+    senseoNode.setProperty("power").send("true");
   }
   else if (value == "false" && mySenseoSM.getState() != SENSEO_OFF) {
     myControl.pressPowerButton();
+    senseoNode.setProperty("power").send("false");
   }
   else if (value == "reset") {
+    senseoNode.setProperty("power").send("false");
     tone(beeperPin, 4096, 8000);
     Homie.reset();
   }
@@ -126,8 +129,8 @@ bool buzzerHandler(const HomieRange& range, const String& value) {
   /**
   * Catch incorrect messages
   */
-  if (value != "tone1" && value !="tone2" && value !="tone3") {
-    senseoNode.setProperty("debug").send("buzzer: malformed message content. Allowed: [tone1,tone2,tone3].");
+  if (value != "tone1" && value !="tone2" && value !="tone3" && value !="tone4") {
+    senseoNode.setProperty("debug").send("buzzer: malformed message content. Allowed: [tone1-4,tone2,tone3,tone4].");
     return false;
   }
 
@@ -139,7 +142,8 @@ bool buzzerHandler(const HomieRange& range, const String& value) {
   senseoNode.setProperty("buzzer").send(value);
   if (value == "tone1") tone(beeperPin, 4096, 300);
   if (value == "tone2") tone(beeperPin, 2048, 300);
-  if (value == "tone3") tone(beeperPin, 1024, 300);
+  if (value == "tone3") tone(beeperPin, 1536, 300);
+  if (value == "tone4") tone(beeperPin, 1024, 300);
   senseoNode.setProperty("buzzer").send("");
   return true;
 }
@@ -152,6 +156,7 @@ void senseoStateExitAction() {
     case SENSEO_OFF: {
       senseoNode.setProperty("power").send("true");
       senseoNode.setProperty("outOfWater").send("false");
+      senseoNode.setProperty("waterAvailable").send("true");
       senseoNode.setProperty("brew").send("false");
       break;
     }
@@ -196,6 +201,7 @@ void senseoStateExitAction() {
       if (brewedSize == 0) {
         senseoNode.setProperty("debug").send("brew: unexpected time in SENSEO_BREWING state. Please adapt timings.");
       }
+      senseoNode.setProperty("brewedSize").send("");
 
       if (CupDetectorAvailableSetting.get()) myCup.fillUp();
 
@@ -210,7 +216,10 @@ void senseoStateExitAction() {
       break;
     }
     case SENSEO_NOWATER: {
-      if (mySenseoSM.getState() != SENSEO_OFF) senseoNode.setProperty("outOfWater").send("false");
+      if (mySenseoSM.getState() != SENSEO_OFF) {
+        senseoNode.setProperty("outOfWater").send("false");
+        senseoNode.setProperty("waterAvailable").send("true");
+      }
       break;
     }
     case SENSEO_unknown: {
@@ -233,6 +242,7 @@ void senseoStateEntryAction() {
         senseoNode.setProperty("debug").send("recipe: SENSEO_OFF state reached. Cancelling.");
       }
       break;
+      senseoNode.setProperty("debug").send("");
     }
     case SENSEO_HEATING: {
       break;
@@ -261,6 +271,7 @@ void senseoStateEntryAction() {
     case SENSEO_NOWATER: {
       if (BuzzerSetting.get()) tone(beeperPin, 4096, 2000);
       senseoNode.setProperty("outOfWater").send("true");
+      senseoNode.setProperty("waterAvailable").send("false");
 
       /** Delete recipe if set */
       if (recipeBrewCups != 0) {
@@ -310,6 +321,7 @@ void setupHandler() {
     senseoNode.setProperty("cupFull").send(myCup.isFull() ? "true" : "false");
   }
   senseoNode.setProperty("outOfWater").send("false");
+  senseoNode.setProperty("waterAvailable").send("true");
   senseoNode.setProperty("brew").send("false");
 }
 
@@ -396,7 +408,7 @@ void setup() {
   /**
   * Homie specific settings
   */
-  Homie_setFirmware("senseo-wifi", "1.3.1");
+  Homie_setFirmware("senseo-wifi", "1.4.1");
   Homie_setBrand("SenseoWifi");
   //Homie.disableResetTrigger();
   Homie.disableLedFeedback();
@@ -420,10 +432,11 @@ void setup() {
   senseoNode.advertise("brew").setName("Brew").settable(brewHandler).setDatatype("enum").setFormat("1cup,2cup");
   senseoNode.advertise("brewedSize").setName("Brew Size").setDatatype("string").setRetained(false);
   senseoNode.advertise("outOfWater").setName("Out of Water").setDatatype("boolean");
+  senseoNode.advertise("waterAvailable").setName("Water Available").setDatatype("boolean");
   senseoNode.advertise("recipe").setName("Receipt").setDatatype("string").setRetained(false);
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupAvailable").setName("Cup Available");
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupFull").setName("Cup Full");
-  if (BuzzerSetting.get()) senseoNode.advertise("buzzer").setName("Buzzer").settable(buzzerHandler).setDatatype("enum").setFormat("tone1,tone2,tone3");
+  if (BuzzerSetting.get()) senseoNode.advertise("buzzer").setName("Buzzer").settable(buzzerHandler).setDatatype("enum").setFormat("tone1,tone2,tone3, tone4");
   
   if (BuzzerSetting.get()) tone(beeperPin, 1536, 2000);
   Homie.onEvent(onHomieEvent);

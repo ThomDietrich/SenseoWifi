@@ -133,6 +133,15 @@ Press the configuration reset button previously mounted in the base of the machi
 The machine switches in configuration mode and provides a Wifi accesspoint, which upon connection once again presents the configuration web frontend.
 Follow these instructions if you ever loose connection, or want to change your Wifi or MQTT settings.
 
+### OTA Updates
+
+After an initial flash with the firmware, updates can be sent via Wifi+MQTT, no need to take the machine apart.
+The web frontend on flash and your custom configuration stay on the device.
+
+```sh
+python3 ota_updater_202011.py -l 192.168.0.75 -u user -d password -t "homie/" -i "senseo-wifi-rf21" .pio/build/senseo-wifi/firmware.bin
+```
+
 ## Usage
 
 If everything worked out your machine now communicates its status and accepts commands via MQTT.
@@ -168,8 +177,8 @@ input_boolean:
 
 switch:
   - platform: mqtt
-    name: SenseoWifi
-    unique_id: uniqueid__senseo_wifi_power
+    name: senseowifi_power
+    unique_id: uniqueid__senseowifi_power
     icon: mdi:power
     #
     state_topic: "homie/senseo-wifi-rf21/machine/power"
@@ -184,44 +193,10 @@ switch:
     payload_available: "ready"
     payload_not_available: "lost"
 
-sensor:
-  - platform: mqtt
-    name: SenseoWifi Letzte Brühmenge
-    unique_id: uniqueid__senseo_wifi_brewed_size
-    icon: mdi:coffee-maker
-    #
-    state_topic: "homie/senseo-wifi-rf21/machine/brewedSize"
-    #
-    availability_topic: "homie/senseo-wifi-rf21/$state"
-    payload_available: "ready"
-    payload_not_available: "lost"
-
-  - platform: mqtt
-    name: SenseoWifi Operationszustand
-    unique_id: uniqueid__senseo_wifi_opstate
-    icon: mdi:state-machine
-    #
-    state_topic: "homie/senseo-wifi-rf21/machine/opState"
-    #
-    availability_topic: "homie/senseo-wifi-rf21/$state"
-    payload_available: "ready"
-    payload_not_available: "lost"
-
-  - platform: mqtt
-    name: SenseoWifi Nachrichten
-    unique_id: uniqueid__senseo_wifi_debug
-    icon: mdi:comment-text-multiple-outline
-    #
-    state_topic: "homie/senseo-wifi-rf21/machine/debug"
-    #
-    availability_topic: "homie/senseo-wifi-rf21/$state"
-    payload_available: "ready"
-    payload_not_available: "lost"
-
 binary_sensor:
   - platform: mqtt
-    name: SenseoWifi Wassertank alle
-    unique_id: uniqueid__senseo_wifi_outofwater
+    name: senseowifi_out_of_water
+    unique_id: uniqueid__senseowifi_out_of_water
     icon: mdi:water-off-outline
     #
     state_topic: "homie/senseo-wifi-rf21/machine/outOfWater"
@@ -233,8 +208,21 @@ binary_sensor:
     payload_not_available: "lost"
 
   - platform: mqtt
-    name: SenseoWifi Tasse vorhanden
-    unique_id: uniqueid__senseo_wifi_cup_available
+    name: senseowifi_water_available
+    unique_id: uniqueid__senseowifi_water_available
+    icon: mdi:water-outline
+    #
+    state_topic: "homie/senseo-wifi-rf21/machine/waterAvailable"
+    payload_on: "true"
+    payload_off: "false"
+    #
+    availability_topic: "homie/senseo-wifi-rf21/$state"
+    payload_available: "ready"
+    payload_not_available: "lost"
+
+  - platform: mqtt
+    name: senseowifi_cup_available
+    unique_id: uniqueid__senseowifi_cup_available
     icon: mdi:coffee-outline
     #
     state_topic: "homie/senseo-wifi-rf21/machine/cupAvailable"
@@ -246,8 +234,8 @@ binary_sensor:
     payload_not_available: "lost"
 
   - platform: mqtt
-    name: SenseoWifi Tasse befüllt
-    unique_id: uniqueid__senseo_wifi_cup_full
+    name: senseowifi_cup_full
+    unique_id: uniqueid__senseowifi_cup_full
     icon: mdi:coffee
     #
     state_topic: "homie/senseo-wifi-rf21/machine/cupFull"
@@ -257,6 +245,103 @@ binary_sensor:
     availability_topic: "homie/senseo-wifi-rf21/$state"
     payload_available: "ready"
     payload_not_available: "lost"
+
+sensor:
+  - platform: mqtt
+    name: senseowifi_brewed_size
+    unique_id: uniqueid__senseowifi_brewed_size
+    icon: mdi:coffee-maker
+    #
+    state_topic: "homie/senseo-wifi-rf21/machine/brewedSize"
+    #
+    availability_topic: "homie/senseo-wifi-rf21/$state"
+    payload_available: "ready"
+    payload_not_available: "lost"
+
+  - platform: mqtt
+    name: senseowifi_opstate
+    unique_id: uniqueid__senseowifi_opstate
+    icon: mdi:state-machine
+    #
+    state_topic: "homie/senseo-wifi-rf21/machine/opState"
+    #
+    availability_topic: "homie/senseo-wifi-rf21/$state"
+    payload_available: "ready"
+    payload_not_available: "lost"
+
+  - platform: mqtt
+    name: senseowifi_debug
+    unique_id: uniqueid__senseowifi_debug
+    icon: mdi:comment-text-multiple-outline
+    #
+    state_topic: "homie/senseo-wifi-rf21/machine/debug"
+    #
+    availability_topic: "homie/senseo-wifi-rf21/$state"
+    payload_available: "ready"
+    payload_not_available: "lost"
+
+  - platform: mqtt
+    name: senseowifi_rssi
+    unique_id: uniqueid__senseowifi_rssi
+    icon: mdi:signal-cellular-2
+    #
+    state_topic: "homie/senseo-wifi-rf21/$stats/signal"
+    unit_of_measurement: "%"
+    state_class: measurement
+    #
+    availability_topic: "homie/senseo-wifi-rf21/$state"
+    payload_available: "ready"
+    payload_not_available: "lost"
+
+  - platform: mqtt
+    name: senseowifi_uptime
+    unique_id: uniqueid__senseowifi_uptime
+    icon: mdi:av-timer
+    #
+    state_topic: "homie/senseo-wifi-rf21/$stats/uptime"
+    unit_of_measurement: "s"
+    state_class: total_increasing
+    #
+    availability_topic: "homie/senseo-wifi-rf21/$state"
+    payload_available: "ready"
+    payload_not_available: "lost"
+
+  - platform: template
+    sensors:
+      senseowifi_uptime_since:
+        unique_id: uniqueid__senseowifi_uptime_since
+        friendly_name: "SenseoWifi Letzter Neustart"
+        value_template: >
+          {% if is_state("sensor.senseowifi_uptime", "unavailable") %}
+            {{ states.sensor.senseowifi_uptime.state }}
+          {% else %}
+              {{ ((as_timestamp(now() - timedelta(seconds=(states.sensor.senseowifi_uptime.state | int))) / 60) | round() * 60) | timestamp_local() }}
+          {% endif %}
+        icon_template: mdi:calendar-clock
+        device_class: timestamp
+
+homeassistant:
+  customize:
+    switch.senseowifi_power:
+      friendly_name: "SenseoWifi"
+    binary_sensor.senseowifi_out_of_water:
+      friendly_name: "SenseoWifi Wassertank leer"
+    binary_sensor.senseowifi_water_available:
+      friendly_name: "SenseoWifi Wassertank befüllt"
+    binary_sensor.senseowifi_cup_available:
+      friendly_name: "SenseoWifi Tasse steht unter"
+    binary_sensor.senseowifi_cup_full:
+      friendly_name: "SenseoWifi Tasse voll"
+    sensor.senseowifi_brewed_size:
+      friendly_name: "SenseoWifi Zähler Kaffee-Brühungen (inkl. klein oder groß)"
+    sensor.senseowifi_opstate:
+      friendly_name: "SenseoWifi Operationszustand"
+    sensor.senseowifi_debug:
+      friendly_name: "SenseoWifi Debug-Nachrichten"
+    sensor.senseowifi_uptime:
+      friendly_name: "SenseoWifi Uptime"
+    sensor.senseowifi_rssi:
+      friendly_name: "SenseoWifi WLAN Signalstärke (RSSI)"
 
 automation:
   - id: "1611257531404"
@@ -270,6 +355,8 @@ automation:
         data:
           topic: "homie/senseo-wifi-rf21/machine/brew/set"
           payload: "1cup"
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.senseowifi_brew_normal
 
   - id: "1611257531405"
     alias: Regel SenseoWifi Auslöser große Tasse brühen
@@ -282,20 +369,8 @@ automation:
         data:
           topic: "homie/senseo-wifi-rf21/machine/brew/set"
           payload: "2cup"
-
-  - id: "1611257531406"
-    alias: Regel SenseoWifi update beim Ausschalten
-    trigger:
-      platform: state
-      entity_id: binary_sensor.senseowifi_brew
-      to: "off"
-    action:
       - service: input_boolean.turn_off
-        data:
-          entity_id: input_boolean.senseowifi_brew_normal
-      - service: input_boolean.turn_off
-        data:
-          entity_id: input_boolean.senseowifi_brew_double
+        entity_id: input_boolean.senseowifi_brew_double
 
   - id: "1611257542501"
     alias: Regel SenseoWifi Auslöser Buzzer
@@ -308,6 +383,76 @@ automation:
         data:
           topic: "homie/senseo-wifi-rf21/machine/buzzer/set"
           payload: "tone1"
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.senseowifi_buzzer_tone1
+```
+
+Lovelace configuration:
+```yaml
+cards:
+  - type: entities
+    entities:
+      - entity: switch.senseowifi_power
+        name: Power
+      - type: conditional
+        conditions:
+          - entity: sensor.senseowifi_opstate
+            state_not: SENSEO_OFF
+        row:
+          entity: sensor.senseowifi_opstate
+          name: Operationszustand
+  - type: conditional
+    conditions:
+      - entity: binary_sensor.senseowifi_out_of_water
+        state: 'on'
+    card:
+      type: entities
+      entities:
+        - entity: binary_sensor.senseowifi_out_of_water
+          name: Wassertank leer
+  - type: conditional
+    conditions:
+      - entity: switch.senseowifi_power
+        state: 'on'
+      - entity: binary_sensor.senseowifi_out_of_water
+        state_not: 'on'
+      - entity: binary_sensor.senseowifi_cup_full
+        state: 'off'
+    card:
+      type: entities
+      entities:
+        - entity: binary_sensor.senseowifi_cup_available
+          name: Tasse steht unter
+  - type: conditional
+    conditions:
+      - entity: binary_sensor.senseowifi_cup_full
+        state: 'on'
+    card:
+      type: entities
+      entities:
+        - entity: binary_sensor.senseowifi_cup_full
+          name: Tasse gefüllt
+  - type: conditional
+    conditions:
+      - entity: sensor.senseowifi_opstate
+        state: SENSEO_READY
+      - entity: binary_sensor.senseowifi_cup_available
+        state: 'on'
+      - entity: binary_sensor.senseowifi_cup_full
+        state: 'off'
+    card:
+      type: entities
+      entities:
+        - type: buttons
+          entities:
+            - entity: input_boolean.senseowifi_brew_normal
+              name: kleine Tasse brühen
+              icon: mdi:coffee-to-go
+            - entity: input_boolean.senseowifi_brew_double
+              name: große Tasse brühen
+              icon: mdi:coffee-to-go
+title: SenseoWifi
+type: vertical-stack
 ```
 
 ### openHAB Configuration Example
