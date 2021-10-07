@@ -4,7 +4,7 @@ Wifi'ify the Senseo coffee maker.
 
 The coffee maker is with no doubt a central element of our lives.
 In the Smart Home where every device is connected and automated, the coffee making can not be left out.
-Let's bring the [Philips Senseo](https://de.wikipedia.org/wiki/Senseo) (Basic or Classic) into your Wi-Fi and control it remotely!
+Let's bring the [Philips Senseo](https://de.wikipedia.org/wiki/Senseo) (Basic or Classic) into your Wi-Fi and control it remotely from your smartphone, through automation, or by extension via Alexa!
 
 > Yes, this is silly, you should do it too!
 
@@ -17,9 +17,9 @@ This project contains information and material regarding:
 - Compiling firmware with [PlatformIO](https://platformio.org/) (e.g. as plugin in [VisualStudioCode](https://code.visualstudio.com/))
 - Flashing the custom PCB with the **provided firmware**
 - Connecting to Wi-Fi and [MQTT](https://www.hivemq.com/mqtt-essentials)
-- Connecting to [openHAB](https://openhab.org) (or any other home automation solution)
-- *(optional)* Adding a buzzer for **audio feedback**
-- *(optional)* Adding a **cup detector** for further automation
+- Connecting to [Home Assistant](https://www.home-assistant.io), [openHAB](https://openhab.org) or any other home automation solution, including voice assistants like [Amazon Alexa](https://en.wikipedia.org/wiki/Amazon_Alexa)
+- Adding a buzzer for **audio feedback** *(optional)*
+- Adding a **cup detector** for further automation *(optional)*
 
 ![](images/SenseoWifi-openHAB.png)
 
@@ -155,6 +155,9 @@ With the machine connected to Wifi and MQTT, you can now link a smart home syste
 ### Home Assistant Configuration Example
 
 The following example integrates the Senseo machine with the home automation solution Home Assistant.
+The configuration adds all necessary entities, translations to German, and clever automations to make the machine useful.
+E.g. one automation enables a complete coffee brewing cycle with a single command, the other reminds you of your warm coffee every minute while you didn't pick it up.
+
 Please make sure the machine is connected to your MQTT broker and adapt the machine name in the topic.
 
 Home Assistant config file `packages/senseo_wifi.yaml`:
@@ -488,7 +491,7 @@ automation:
         entity_id: input_boolean.senseowifi_brew_double_automated
 ```
 
-Lovelace configuration:
+Lovelace configuration for an interactive UI control in the Home Assistant app:
 ```yaml
 cards:
   - type: entities
