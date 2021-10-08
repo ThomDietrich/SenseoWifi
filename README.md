@@ -37,15 +37,17 @@ This project is comatible with:
 
 ## Features
 
-After implementing the steps below your Senseo coffee machine will offer the following new features:
+After implementing the steps below your Senseo coffee machine will offer the following new features.
+This is especially useful in combination with a home automation system.
 
-- Inform about the current state (Standby, Brewing, ...) of the machine via Wifi/MQTT
-- Notify about an empty water tank via Wifi/MQTT
+- Inform about the current state (Standby, Brewing, ...) of the machine
+- Notify about an empty water tank
+- Notify about a filled up coffee cup
 - Remote control the machine via Wifi/MQTT commands
-- Go through a complete brewing cycle automatically (Turn on, brew, turn off) upon Wifi/MQTT command
-- Audio feedback via a built-in speaker (optional)
-- Detect a cup via an optical sensor (optional)
-- Collect usage statistics, e.g. stored in InfluxDB and vidualized in Grafana
+- Go through a complete brewing cycle automatically (Turn on, brew, turn off)
+- Audio feedback via a built-in speaker
+- Detect a cup via an optical sensor
+- Collect usage statistics, e.g. stored in InfluxDB and visualized in Grafana
 
 ## Hardware Modification
 
@@ -579,7 +581,6 @@ Bridge mqtt:systemBroker:LocalBroker [ host="your-broker-ip", secure=false ]
         Type string : Brew           "Brew"             [stateTopic="devices/senseo-wifi-home/machine/brew",commandTopic="devices/senseo-wifi-home/machine/brew/set"]
         Type number : BrewedSize     "BrewedSize"       [stateTopic="devices/senseo-wifi-home/machine/brewedSize"]
         Type string : OutOfWater     "OutOfWater"       [stateTopic="devices/senseo-wifi-home/machine/outOfWater"]
-        Type string : Recipe         "Recipe"           [stateTopic="devices/senseo-wifi-home/machine/recipe",commandTopic="devices/senseo-wifi-home/machine/recipe/set"]
         Type string : CupAvailable   "Tasse vorh."      [stateTopic="devices/senseo-wifi-home/machine/cupAvailable"]
         Type string : CupFull        "Tasse voll"       [stateTopic="devices/senseo-wifi-home/machine/cupFull"]
         Type string : Online         "Online"           [stateTopic="devices/senseo-wifi-home/$online"]
@@ -605,7 +606,6 @@ Switch KU_Senseo_OnOff         "OnOff"                               {channel="m
 String KU_Senseo_Brew          "Brew"                                {channel="mqtt:topic:SenseoWiFi:Brew"}
 Number KU_Senseo_BrewedSize    "BrewedSize"                          {channel="mqtt:topic:SenseoWiFi:BrewedSize"}
 String KU_Senseo_OutOfWater    "OutOfWater"                          {channel="mqtt:topic:SenseoWiFi:OutOfWater" [profile="transform:MAP", function="senseo-wifi.map"]}
-String KU_Senseo_Recipe        "Recipe"                              {channel="mqtt:topic:SenseoWiFi:Recipe"}
 String KU_Senseo_CupAvailable  "Tasse vorh."                         {channel="mqtt:topic:SenseoWiFi:CupAvailable" [profile="transform:MAP", function="senseo-wifi.map"]}
 String KU_Senseo_CupFull       "Tasse voll"                          {channel="mqtt:topic:SenseoWiFi:CupFull" [profile="transform:MAP", function="senseo-wifi.map"]}
 String KU_Senseo_Online        "Online"                              {channel="mqtt:topic:SenseoWiFi:Online"}
