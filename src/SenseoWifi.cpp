@@ -158,7 +158,7 @@ void senseoStateExitAction() {
         senseoNode.setProperty("debug").send("brew: unexpected time in SENSEO_BREWING state. Please adapt timings.");
       }
       senseoNode.setProperty("brewedSize").send("");
-      if (CupDetectorAvailableSetting.get()) myCup.fillUp();
+      if (CupDetectorAvailableSetting.get() && myCup.isFilling()) myCup.setFull();
       break;
     }
     case SENSEO_NOWATER: {
@@ -192,6 +192,7 @@ void senseoStateEntryAction() {
       break;
     }
     case SENSEO_BREWING: {
+      if (CupDetectorAvailableSetting.get()) myCup.setFilling();
       senseoNode.setProperty("brew").send("true");
       break;
     }
@@ -327,7 +328,7 @@ void setup() {
   /**
   * Homie specific settings
   */
-  Homie_setFirmware("senseo-wifi", "1.5.0");
+  Homie_setFirmware("senseo-wifi", "1.6.0");
   Homie_setBrand("SenseoWifi");
   //Homie.disableResetTrigger();
   Homie.disableLedFeedback();

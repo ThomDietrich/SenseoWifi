@@ -23,6 +23,7 @@ void Cup::updateState() {
   // process debounced detector reading
   if (value != cupAvailable) {
     cupAvailable = value;
+    cupFilling = false;
     availableChanged = true;
     if (cupAvailable || (!cupAvailable && cupFull)) {
       cupFull = false;
@@ -31,7 +32,13 @@ void Cup::updateState() {
   }
 }
 
-void Cup::fillUp() {
+void Cup::setFilling() {
+  cupFilling = true;
+  cupFull = false;
+}
+
+void Cup::setFull() {
+  cupFilling = false;
   cupFull = true;
   fullChanged = true;
 }
@@ -58,6 +65,10 @@ bool Cup::isAvailable() {
 
 bool Cup::isNotAvailable() {
   return !cupAvailable;
+}
+
+bool Cup::isFilling() {
+  return cupFilling;
 }
 
 bool Cup::isFull() {

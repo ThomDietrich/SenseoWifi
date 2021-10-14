@@ -14,11 +14,13 @@ class Cup
   public:
     Cup(int pin);
     void updateState();
-    void fillUp();
+    void setFilling();
+    void setFull();
     bool isAvailableChanged();
     bool isFullChanged();
     bool isAvailable();
     bool isNotAvailable();
+    bool isFilling();
     bool isFull();
     bool isEmpty();
   private:
@@ -28,6 +30,7 @@ class Cup
     bool availableChanged = false;
     bool fullChanged = false;
     bool cupAvailable = false;
+    bool cupFilling = false;
     bool cupFull = false;
 };
 
