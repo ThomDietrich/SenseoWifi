@@ -214,19 +214,7 @@ binary_sensor:
     state_topic: "homie/senseo-wifi-rf21/machine/outOfWater"
     payload_on: "true"
     payload_off: "false"
-    #
-    availability_topic: "homie/senseo-wifi-rf21/$state"
-    payload_available: "ready"
-    payload_not_available: "lost"
-
-  - platform: mqtt
-    name: senseowifi_water_available
-    unique_id: uniqueid__senseowifi_water_available
-    icon: mdi:water-outline
-    #
-    state_topic: "homie/senseo-wifi-rf21/machine/waterAvailable"
-    payload_on: "true"
-    payload_off: "false"
+    device_class: problem
     #
     availability_topic: "homie/senseo-wifi-rf21/$state"
     payload_available: "ready"
@@ -341,9 +329,7 @@ homeassistant:
     switch.senseowifi_power:
       friendly_name: "SenseoWifi"
     binary_sensor.senseowifi_out_of_water:
-      friendly_name: "SenseoWifi Wassertank leer"
-    binary_sensor.senseowifi_water_available:
-      friendly_name: "SenseoWifi Wassertank befüllt"
+      friendly_name: "SenseoWifi Wassertank leer Warnung"
     binary_sensor.senseowifi_cup_available:
       friendly_name: "SenseoWifi Tasse steht unter"
     binary_sensor.senseowifi_cup_full:
@@ -431,6 +417,19 @@ automation:
 
   ################################################################################
 
+  - id: "1610849760"
+    alias: Regel Küche SenseoWifi Kaffee mit Ikea Shortcut-Taster
+    trigger:
+      platform: event
+      event_type: zha_event
+      event_data:
+        unique_id: "68:0a:e2:ff:fe:2f:3a:db:1:0x0006"
+    action:
+      - service: input_boolean.toggle
+        entity_id: input_boolean.senseowifi_brew_double_automated
+
+  ################################################################################
+
   - id: "1611257542601"
     alias: Regel SenseoWifi automatisch brühen (Schritt 1)
     trigger:
@@ -442,6 +441,10 @@ automation:
         entity_id: switch.senseowifi_power
         state: "off"
     action:
+      - service: mqtt.publish
+        data:
+          topic: "homie/senseo-wifi-rf21/machine/buzzer/set"
+          payload: "tone4"
       - service: switch.turn_on
         entity_id: switch.senseowifi_power
 
@@ -459,8 +462,8 @@ automation:
         entity_id: switch.senseowifi_power
         state: "on"
       - condition: state
-        entity_id: binary_sensor.senseowifi_water_available
-        state: "on"
+        entity_id: binary_sensor.senseowifi_out_of_water
+        state: "off"
       - condition: state
         entity_id: binary_sensor.senseowifi_cup_available
         state: "on"
@@ -489,8 +492,32 @@ automation:
     action:
       - service: switch.turn_off
         entity_id: switch.senseowifi_power
+
+  - id: "1611257542604"
+    alias: Regel SenseoWifi automatisch brühen (Schritt 4)
+    trigger:
+      platform: state
+      entity_id: switch.senseowifi_power
+      to: "off"
+    condition:
+      - condition: state
+        entity_id: input_boolean.senseowifi_brew_double_automated
+        state: "on"
+    action:
       - service: input_boolean.turn_off
         entity_id: input_boolean.senseowifi_brew_double_automated
+
+  - id: "1611257542605"
+    alias: Regel SenseoWifi automatisch brühen (Schritt 5)
+    trigger:
+      platform: state
+      entity_id: input_boolean.senseowifi_brew_double_automated
+      to: "off"
+    action:
+      - service: mqtt.publish
+        data:
+          topic: "homie/senseo-wifi-rf21/machine/buzzer/set"
+          payload: "tone4"
 ```
 
 Lovelace configuration for an interactive UI control in the Home Assistant app:

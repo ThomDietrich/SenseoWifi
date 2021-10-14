@@ -112,7 +112,6 @@ void senseoStateExitAction() {
     case SENSEO_OFF: {
       senseoNode.setProperty("power").send("true");
       senseoNode.setProperty("outOfWater").send("false");
-      senseoNode.setProperty("waterAvailable").send("true");
       senseoNode.setProperty("brew").send("false");
       break;
     }
@@ -164,7 +163,6 @@ void senseoStateExitAction() {
     case SENSEO_NOWATER: {
       if (mySenseoSM.getState() != SENSEO_OFF) {
         senseoNode.setProperty("outOfWater").send("false");
-        senseoNode.setProperty("waterAvailable").send("true");
       }
       break;
     }
@@ -199,7 +197,6 @@ void senseoStateEntryAction() {
     case SENSEO_NOWATER: {
       if (BuzzerSetting.get()) tone(beeperPin, 4096, 2000);
       senseoNode.setProperty("outOfWater").send("true");
-      senseoNode.setProperty("waterAvailable").send("false");
       break;
     }
     case SENSEO_unknown: {
@@ -242,7 +239,6 @@ void setupHandler() {
     senseoNode.setProperty("cupFull").send(myCup.isFull() ? "true" : "false");
   }
   senseoNode.setProperty("outOfWater").send("false");
-  senseoNode.setProperty("waterAvailable").send("true");
   senseoNode.setProperty("brew").send("false");
 }
 
@@ -328,7 +324,7 @@ void setup() {
   /**
   * Homie specific settings
   */
-  Homie_setFirmware("senseo-wifi", "1.6.0");
+  Homie_setFirmware("senseo-wifi", "1.7.0");
   Homie_setBrand("SenseoWifi");
   //Homie.disableResetTrigger();
   Homie.disableLedFeedback();
@@ -351,7 +347,6 @@ void setup() {
   senseoNode.advertise("brew").setName("Brew").settable(brewHandler).setDatatype("enum").setFormat("1cup,2cup");
   senseoNode.advertise("brewedSize").setName("Brew Size").setDatatype("string").setRetained(false);
   senseoNode.advertise("outOfWater").setName("Out of Water").setDatatype("boolean");
-  senseoNode.advertise("waterAvailable").setName("Water Available").setDatatype("boolean");
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupAvailable").setName("Cup Available");
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupFull").setName("Cup Full");
   if (BuzzerSetting.get()) senseoNode.advertise("buzzer").setName("Buzzer").settable(buzzerHandler).setDatatype("enum").setFormat("tone1,tone2,tone3, tone4");
