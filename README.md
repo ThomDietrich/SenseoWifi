@@ -287,7 +287,6 @@ sensor:
     #
     state_topic: "homie/senseo-wifi-rf21/$stats/signal"
     unit_of_measurement: "%"
-    state_class: measurement
     #
     availability_topic: "homie/senseo-wifi-rf21/$state"
     payload_available: "ready"
@@ -300,7 +299,6 @@ sensor:
     #
     state_topic: "homie/senseo-wifi-rf21/$stats/uptime"
     unit_of_measurement: "s"
-    state_class: total_increasing
     #
     availability_topic: "homie/senseo-wifi-rf21/$state"
     payload_available: "ready"
@@ -317,7 +315,7 @@ sensor:
           {% if is_state("sensor.senseowifi_uptime", "unavailable") %}
             {{ states.sensor.senseowifi_uptime.state }}
           {% else %}
-              {{ ((as_timestamp(now() - timedelta(seconds=(states.sensor.senseowifi_uptime.state | int))) / 60) | round() * 60) | timestamp_local() }}
+              {{ ((as_timestamp(now() - timedelta(seconds=(states.sensor.senseowifi_uptime.state | int))) / 300) | round() * 300) | timestamp_local() }}
           {% endif %}
         icon_template: mdi:calendar-clock
         device_class: timestamp
@@ -394,11 +392,11 @@ automation:
 
   - id: "1611257542502"
     alias: Regel SenseoWifi Erinnerungston bei voller Tasse
+    mode: single
     trigger:
       platform: state
       entity_id: binary_sensor.senseowifi_cup_full
       to: "on"
-    mode: single
     action:
       - delay:
           minutes: 3
@@ -431,11 +429,11 @@ automation:
   ################################################################################
 
   - id: "1611257542601"
-    alias: Regel SenseoWifi automatisch brühen (Schritt 1)
+    alias: Regel SenseoWifi automatisch brühen (Schritt 1) Einschalten
     trigger:
-      platform: state
-      entity_id: input_boolean.senseowifi_brew_double_automated
-      to: "on"
+      - platform: state
+        entity_id: input_boolean.senseowifi_brew_double_automated
+        to: "on"
     condition:
       - condition: state
         entity_id: switch.senseowifi_power
@@ -449,11 +447,13 @@ automation:
         entity_id: switch.senseowifi_power
 
   - id: "1611257542602"
-    alias: Regel SenseoWifi automatisch brühen (Schritt 2)
+    alias: Regel SenseoWifi automatisch brühen (Schritt 2) Brühen starten
     trigger:
       - platform: state
         entity_id: sensor.senseowifi_opstate
         to: "SENSEO_READY"
+        for:
+          seconds: 1 # let states settle
       - platform: state
         entity_id: input_boolean.senseowifi_brew_double_automated
         to: "on"
@@ -480,11 +480,13 @@ automation:
           payload: "2cup"
 
   - id: "1611257542603"
-    alias: Regel SenseoWifi automatisch brühen (Schritt 3)
+    alias: Regel SenseoWifi automatisch brühen (Schritt 3) Ausschalten
     trigger:
       platform: state
       entity_id: sensor.senseowifi_opstate
       from: "SENSEO_BREWING"
+      for:
+        seconds: 1 # let states settle
     condition:
       - condition: state
         entity_id: input_boolean.senseowifi_brew_double_automated
@@ -494,7 +496,7 @@ automation:
         entity_id: switch.senseowifi_power
 
   - id: "1611257542604"
-    alias: Regel SenseoWifi automatisch brühen (Schritt 4)
+    alias: Regel SenseoWifi automatisch brühen (Schritt 4) Flag löschen
     trigger:
       platform: state
       entity_id: switch.senseowifi_power
@@ -508,7 +510,7 @@ automation:
         entity_id: input_boolean.senseowifi_brew_double_automated
 
   - id: "1611257542605"
-    alias: Regel SenseoWifi automatisch brühen (Schritt 5)
+    alias: Regel SenseoWifi automatisch brühen (Schritt 5) Buzzerbestätigung
     trigger:
       platform: state
       entity_id: input_boolean.senseowifi_brew_double_automated
