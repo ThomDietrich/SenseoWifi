@@ -156,7 +156,7 @@ void senseoStateExitAction() {
       if (brewedSize == 0) {
         senseoNode.setProperty("debug").send("brew: unexpected time in SENSEO_BREWING state. Please adapt timings.");
       }
-      senseoNode.setProperty("brewedSize").send("");
+      // senseoNode.setProperty("brewedSize").send("");  // TODO: Will leaving an old value on MQTT lead to multiple writes to the database in HA?
       if (CupDetectorAvailableSetting.get() && myCup.isFilling()) myCup.setFull();
       break;
     }
@@ -190,7 +190,7 @@ void senseoStateEntryAction() {
       break;
     }
     case SENSEO_BREWING: {
-      if (CupDetectorAvailableSetting.get()) myCup.setFilling();
+      if (CupDetectorAvailableSetting.get() && myCup.isAvailable()) myCup.setFilling();
       senseoNode.setProperty("brew").send("true");
       break;
     }
@@ -349,7 +349,7 @@ void setup() {
   senseoNode.advertise("outOfWater").setName("Out of Water").setDatatype("boolean");
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupAvailable").setName("Cup Available");
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupFull").setName("Cup Full");
-  if (BuzzerSetting.get()) senseoNode.advertise("buzzer").setName("Buzzer").settable(buzzerHandler).setDatatype("enum").setFormat("tone1,tone2,tone3, tone4");
+  if (BuzzerSetting.get()) senseoNode.advertise("buzzer").setName("Buzzer").settable(buzzerHandler).setDatatype("enum").setFormat("tone1,tone2,tone3,tone4");
   
   if (BuzzerSetting.get()) tone(beeperPin, 1536, 2000);
   Homie.onEvent(onHomieEvent);
