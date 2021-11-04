@@ -116,6 +116,7 @@ void senseoStateExitAction() {
       break;
     }
     case SENSEO_HEATING: {
+      senseoNode.setProperty("debug").send(String("senseoState: Heating took ") + String(mySenseoSM.getSecondsInLastState()) + String(" seconds"));
       break;
     }
     case SENSEO_READY: {
@@ -152,9 +153,9 @@ void senseoStateExitAction() {
       }
 
       senseoNode.setProperty("brewedSize").send(String(brewedSize));
-      senseoNode.setProperty("debug").send(String("brew: ") + String(brewedSeconds) + String(" seconds"));
+      senseoNode.setProperty("debug").send(String("senseoState: Brewing took ") + String(brewedSeconds) + String(" seconds"));
       if (brewedSize == 0) {
-        senseoNode.setProperty("debug").send("brew: unexpected time in SENSEO_BREWING state. Please adapt timings.");
+        senseoNode.setProperty("debug").send("Unexpected time in SENSEO_BREWING state. Please adapt timings.");
       }
       // senseoNode.setProperty("brewedSize").send("");  // TODO: Will leaving an old value on MQTT lead to multiple writes to the database in HA?
       if (CupDetectorAvailableSetting.get() && myCup.isFilling()) myCup.setFull();
