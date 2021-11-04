@@ -86,7 +86,7 @@ bool buzzerHandler(const HomieRange& range, const String& value) {
   * Catch incorrect messages
   */
   if (value != "tone1" && value !="tone2" && value !="tone3" && value !="tone4") {
-    senseoNode.setProperty("debug").send("buzzer: malformed message content. Allowed: [tone1-4,tone2,tone3,tone4].");
+    senseoNode.setProperty("debug").send("buzzer: malformed message content. Allowed: [tone1,tone2,tone3,tone4].");
     return false;
   }
 
@@ -113,6 +113,7 @@ void senseoStateExitAction() {
       senseoNode.setProperty("power").send("true");
       senseoNode.setProperty("outOfWater").send("false");
       senseoNode.setProperty("brew").send("false");
+      senseoNode.setProperty("debug").send("senseoState: Machine on");
       break;
     }
     case SENSEO_HEATING: {
@@ -155,7 +156,7 @@ void senseoStateExitAction() {
       senseoNode.setProperty("brewedSize").send(String(brewedSize));
       senseoNode.setProperty("debug").send(String("senseoState: Brewing took ") + String(brewedSeconds) + String(" seconds"));
       if (brewedSize == 0) {
-        senseoNode.setProperty("debug").send("Unexpected time in SENSEO_BREWING state. Please adapt timings.");
+        senseoNode.setProperty("debug").send("brew: Unexpected time in SENSEO_BREWING state. Please adapt timings.");
       }
       // senseoNode.setProperty("brewedSize").send("");  // TODO: Will leaving an old value on MQTT lead to multiple writes to the database in HA?
       if (CupDetectorAvailableSetting.get() && myCup.isFilling()) myCup.setFull();
@@ -180,7 +181,7 @@ void senseoStateEntryAction() {
   switch (mySenseoSM.getState()) {
     case SENSEO_OFF: {
       senseoNode.setProperty("power").send("false");
-      senseoNode.setProperty("debug").send("");
+      senseoNode.setProperty("debug").send("senseoState: Machine off");
       break;
     }
     case SENSEO_HEATING: {
@@ -191,7 +192,14 @@ void senseoStateEntryAction() {
       break;
     }
     case SENSEO_BREWING: {
-      if (CupDetectorAvailableSetting.get() && myCup.isAvailable()) myCup.setFilling();
+      if (CupDetectorAvailableSetting.get()) {
+        if (myCup.isAvailable()) {
+          myCup.setFilling();
+        }
+        else {
+          senseoNode.setProperty("debug").send("cup: Brewing without detected cup, will not report the filling->full process.");
+        }
+      }
       senseoNode.setProperty("brew").send("true");
       break;
     }
@@ -325,7 +333,7 @@ void setup() {
   /**
   * Homie specific settings
   */
-  Homie_setFirmware("senseo-wifi", "1.7.0");
+  Homie_setFirmware("senseo-wifi", "1.7.2");
   Homie_setBrand("SenseoWifi");
   //Homie.disableResetTrigger();
   Homie.disableLedFeedback();
