@@ -185,7 +185,7 @@ input_boolean:
     initial: off
     icon: mdi:coffee
 
-################################################################################
+##############################################################################
 
 switch:
   - platform: mqtt
@@ -269,6 +269,7 @@ sensor:
     payload_available: "ready"
     payload_not_available: "lost"
 
+  ##############################################################################
   - platform: mqtt
     name: senseowifi_debug
     unique_id: uniqueid__senseowifi_debug
@@ -279,6 +280,8 @@ sensor:
     availability_topic: "homie/senseo-wifi-rf21/$state"
     payload_available: "ready"
     payload_not_available: "lost"
+    #
+    #entity_category: diagnostic
 
   - platform: mqtt
     name: senseowifi_rssi
@@ -291,6 +294,8 @@ sensor:
     availability_topic: "homie/senseo-wifi-rf21/$state"
     payload_available: "ready"
     payload_not_available: "lost"
+    #
+    #entity_category: diagnostic
 
   - platform: mqtt
     name: senseowifi_uptime
@@ -303,8 +308,10 @@ sensor:
     availability_topic: "homie/senseo-wifi-rf21/$state"
     payload_available: "ready"
     payload_not_available: "lost"
+    #
+    #entity_category: system
 
-  ################################################################################
+  ##############################################################################
 
   - platform: template
     sensors:
@@ -313,14 +320,14 @@ sensor:
         friendly_name: "SenseoWifi Letzter Neustart"
         value_template: >
           {% if is_state("sensor.senseowifi_uptime", "unavailable") %}
-            {{ states.sensor.senseowifi_uptime.state }}
+            "unavailable"
           {% else %}
-              {{ ((as_timestamp(now() - timedelta(seconds=(states.sensor.senseowifi_uptime.state | int))) / 300) | round() * 300) | timestamp_local() }}
+            {{ ((as_timestamp(now() - timedelta(seconds=(states.sensor.senseowifi_uptime.state | int))) / 300) | round() * 300) | timestamp_local() }}
           {% endif %}
         icon_template: mdi:calendar-clock
         device_class: timestamp
 
-################################################################################
+##############################################################################
 
 homeassistant:
   customize:
@@ -343,7 +350,7 @@ homeassistant:
     sensor.senseowifi_rssi:
       friendly_name: "SenseoWifi WLAN Signalstärke (RSSI)"
 
-################################################################################
+##############################################################################
 
 automation:
   - id: "1611257531404"
@@ -388,7 +395,7 @@ automation:
       - service: input_boolean.turn_off
         entity_id: input_boolean.senseowifi_buzzer_tone
 
-  ################################################################################
+  ##############################################################################
 
   - id: "1611257542502"
     alias: Regel SenseoWifi Erinnerungston bei voller Tasse
@@ -413,7 +420,7 @@ automation:
             - delay:
                 minutes: 1
 
-  ################################################################################
+  ##############################################################################
 
   - id: "1610849760"
     alias: Regel Küche SenseoWifi Kaffee mit Ikea Shortcut-Taster
@@ -426,7 +433,21 @@ automation:
       - service: input_boolean.toggle
         entity_id: input_boolean.senseowifi_brew_double_automated
 
-  ################################################################################
+  ##############################################################################
+
+  - id: "1636231455732"
+    alias: Regel Küche SenseoWifi ausschalten wenn zu lange im READY Zustand
+    trigger:
+      - platform: state
+        entity_id: sensor.senseowifi_opstate
+        to: "SENSEO_READY"
+        for:
+          minutes: 10
+    action:
+      - service: switch.turn_off
+        entity_id: switch.senseowifi_power
+
+  ##############################################################################
 
   - id: "1611257542601"
     alias: Regel SenseoWifi automatisch brühen (Schritt 1) Einschalten
@@ -520,6 +541,8 @@ automation:
         data:
           topic: "homie/senseo-wifi-rf21/machine/buzzer/set"
           payload: "tone4"
+
+  ##############################################################################
 ```
 
 Lovelace configuration for an interactive UI control in the Home Assistant app:
