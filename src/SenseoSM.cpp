@@ -92,3 +92,12 @@ String SenseoSM::getStateAsString() {
   else if (senseoState == SENSEO_NOWATER) return "SENSEO_NOWATER";
   else return "SENSEO_unknown";
 }
+
+String SenseoSM::getStatePrevAsString() {
+  if (senseoStatePrev == SENSEO_OFF) return "SENSEO_OFF";
+  else if (senseoStatePrev == SENSEO_HEATING) return "SENSEO_HEATING";
+  else if (senseoStatePrev == SENSEO_READY) return "SENSEO_READY";
+  else if (senseoStatePrev == SENSEO_BREWING) return "SENSEO_BREWING";
+  else if (senseoStatePrev == SENSEO_NOWATER) return "SENSEO_NOWATER";
+  else return "SENSEO_unknown";
+}

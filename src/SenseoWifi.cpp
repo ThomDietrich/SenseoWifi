@@ -108,16 +108,19 @@ bool buzzerHandler(const HomieRange& range, const String& value) {
 * Senseo state machine, transition reaction: exit actions
 */
 void senseoStateExitAction() {
+  senseoNode.setProperty("debug").send(
+    String("senseoState: Switching from ") + String(mySenseoSM.getStatePrevAsString())
+    + String(" to ") + String(mySenseoSM.getStateAsString())
+    + String(" after ") + String(mySenseoSM.getSecondsInLastState()) + String(" seconds")
+  );
   switch (mySenseoSM.getStatePrev()) {
     case SENSEO_OFF: {
       senseoNode.setProperty("power").send("true");
       senseoNode.setProperty("outOfWater").send("false");
       senseoNode.setProperty("brew").send("false");
-      senseoNode.setProperty("debug").send("senseoState: Machine on");
       break;
     }
     case SENSEO_HEATING: {
-      senseoNode.setProperty("debug").send(String("senseoState: Heating took ") + String(mySenseoSM.getSecondsInLastState()) + String(" seconds"));
       break;
     }
     case SENSEO_READY: {
@@ -154,7 +157,6 @@ void senseoStateExitAction() {
       }
 
       senseoNode.setProperty("brewedSize").send(String(brewedSize));
-      senseoNode.setProperty("debug").send(String("senseoState: Brewing took ") + String(brewedSeconds) + String(" seconds"));
       if (brewedSize == 0) {
         senseoNode.setProperty("debug").send("brew: Unexpected time in SENSEO_BREWING state. Please adapt timings.");
       }
@@ -181,7 +183,6 @@ void senseoStateEntryAction() {
   switch (mySenseoSM.getState()) {
     case SENSEO_OFF: {
       senseoNode.setProperty("power").send("false");
-      senseoNode.setProperty("debug").send("senseoState: Machine off");
       break;
     }
     case SENSEO_HEATING: {
@@ -333,7 +334,7 @@ void setup() {
   /**
   * Homie specific settings
   */
-  Homie_setFirmware("senseo-wifi", "1.7.2");
+  Homie_setFirmware("senseo-wifi", "1.7.3");
   Homie_setBrand("SenseoWifi");
   //Homie.disableResetTrigger();
   Homie.disableLedFeedback();

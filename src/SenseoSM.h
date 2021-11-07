@@ -19,6 +19,7 @@ class SenseoSM
     senseoStateEnum getState();
     senseoStateEnum getStatePrev();
     String getStateAsString();
+    String getStatePrevAsString();
     int getSecondsInLastState();
   private:
     senseoStateEnum senseoState = SENSEO_unknown;
