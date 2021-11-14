@@ -15,8 +15,8 @@ static const int pulseDurTolerance = 10;                   // tolerance for puls
 static const int pulseContThreshold = 2 * pulseDurLedSlow; // time before switching to continuous LED state (state LED_ON and state LED_OFF)
 
 // Senseo state machine (in seconds)
-static const int HeatingTime = 60;
-static const int HeatingTimeTol = 10;
+static const int HeatingTime = 70;
+static const int HeatingTimeTol = 15;
 static const int Brew1CupSeconds = 21;
 static const int Brew2CupSeconds = 41;
 static const int BrewHeat1CupSeconds = 55;
