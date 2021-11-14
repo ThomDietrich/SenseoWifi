@@ -27,6 +27,12 @@ void SenseoControl::pressRightButton() {
   timestampPressed = millis();
 }
 
+void SenseoControl::pressLeftRightButton() {
+  digitalWrite(leftButtonPin, HIGH);
+  digitalWrite(rightButtonPin, HIGH);
+  timestampPressed = millis();
+}
+
 /**
  * The 'press..Button()' functions will "press" but not release the buttons.
  * Call this method regularly (every loop() run) to release buttons after some time.

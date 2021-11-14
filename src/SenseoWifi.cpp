@@ -36,7 +36,7 @@ void ICACHE_RAM_ATTR ledChangedHandler() {
 */
 bool powerHandler(const HomieRange& range, const String& value) {
   if (value != "true" && value !="false" && value != "reset") {
-    senseoNode.setProperty("debug").send("power: malformed message content. Allowed: [true,false].");
+    senseoNode.setProperty("debug").send("power: malformed message content. Allowed: [true,false,reset].");
     return false;
   }
 
@@ -61,8 +61,8 @@ bool powerHandler(const HomieRange& range, const String& value) {
 * No MQTT response is sent from this routine, as pessimistic feedback will be handled in the state machine.
 */
 bool brewHandler(const HomieRange& range, const String& value) {
-  if (value != "1cup" && value !="2cup") {
-    senseoNode.setProperty("debug").send("brew: malformed message content. Allowed: [1cup,2cup].");
+  if (value != "1cup" && value !="2cup" && value !="descale") {
+    senseoNode.setProperty("debug").send("brew: malformed message content. Allowed: [1cup,2cup,descale].");
     return false;
   }
 
@@ -74,7 +74,8 @@ bool brewHandler(const HomieRange& range, const String& value) {
   }
 
   if (value == "1cup") myControl.pressLeftButton();
-  if (value == "2cup") myControl.pressRightButton();
+  else if (value == "2cup") myControl.pressRightButton();
+  else if (value == "descale") myControl.pressLeftRightButton();
   return true;
 }
 
@@ -240,9 +241,6 @@ void setupHandler() {
 
   Homie.getLogger() << endl << "☕☕☕☕ Enjoy your SenseoWifi ☕☕☕☕" << endl << endl;
 
-  /**
-  * Send status data once.
-  */
   senseoNode.setProperty("opState").send(mySenseoSM.getStateAsString());
   if (CupDetectorAvailableSetting.get()) {
     senseoNode.setProperty("cupAvailable").send(myCup.isAvailable() ? "true" : "false");
@@ -250,6 +248,7 @@ void setupHandler() {
   }
   senseoNode.setProperty("outOfWater").send("false");
   senseoNode.setProperty("brew").send("false");
+  senseoNode.setProperty("debug").send("Machine started");
 }
 
 /**
@@ -334,7 +333,7 @@ void setup() {
   /**
   * Homie specific settings
   */
-  Homie_setFirmware("senseo-wifi", "1.7.3");
+  Homie_setFirmware("senseo-wifi", "1.7.8");
   Homie_setBrand("SenseoWifi");
   //Homie.disableResetTrigger();
   Homie.disableLedFeedback();

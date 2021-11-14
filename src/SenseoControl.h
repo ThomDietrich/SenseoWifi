@@ -21,6 +21,7 @@ class SenseoControl
     void pressPowerButton();
     void pressLeftButton();
     void pressRightButton();
+    void pressLeftRightButton();
     void releaseIfPressed();
   private:
     /** The time one/the last button was pressed. '0' means no button is currently pressed */
