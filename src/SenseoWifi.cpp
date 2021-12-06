@@ -161,7 +161,6 @@ void senseoStateExitAction() {
       if (brewedSize == 0) {
         senseoNode.setProperty("debug").send("brew: Unexpected time in SENSEO_BREWING state. Please adapt timings.");
       }
-      // senseoNode.setProperty("brewedSize").send("");  // TODO: Will leaving an old value on MQTT lead to multiple writes to the database in HA?
       if (CupDetectorAvailableSetting.get() && myCup.isFilling()) myCup.setFull();
       break;
     }
@@ -183,6 +182,7 @@ void senseoStateExitAction() {
 void senseoStateEntryAction() {
   switch (mySenseoSM.getState()) {
     case SENSEO_OFF: {
+      senseoNode.setProperty("brewedSize").send("0");
       senseoNode.setProperty("power").send("false");
       break;
     }
@@ -203,6 +203,7 @@ void senseoStateEntryAction() {
         }
       }
       senseoNode.setProperty("brew").send("true");
+      senseoNode.setProperty("brewedSize").send("0");
       break;
     }
     case SENSEO_NOWATER: {
@@ -333,7 +334,7 @@ void setup() {
   /**
   * Homie specific settings
   */
-  Homie_setFirmware("senseo-wifi", "1.7.8");
+  Homie_setFirmware("senseo-wifi", "1.7.9");
   Homie_setBrand("SenseoWifi");
   //Homie.disableResetTrigger();
   Homie.disableLedFeedback();
@@ -359,7 +360,7 @@ void setup() {
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupAvailable").setName("Cup Available");
   if (CupDetectorAvailableSetting.get()) senseoNode.advertise("cupFull").setName("Cup Full");
   if (BuzzerSetting.get()) senseoNode.advertise("buzzer").setName("Buzzer").settable(buzzerHandler).setDatatype("enum").setFormat("tone1,tone2,tone3,tone4");
-  
+
   if (BuzzerSetting.get()) tone(beeperPin, 1536, 2000);
   Homie.onEvent(onHomieEvent);
   Homie.setup();
