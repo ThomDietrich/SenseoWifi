@@ -85,7 +85,7 @@ Assuming the Senseo machine is connected to power 24/7, the additional electroni
 
 1. Solder the custom PCB according to the schematics provided in the `SenseoWifi-PCB` folder (designed in [Fritzing](http://fritzing.org))
 2. Hot clue the custom PCB inside the Senseo machine in a free position [such as shown here](images/DSC09604.jpg)
-3. Wire the custom PCB via the "Senseo Connections" header (angled pin headers recommended) to interface with the Senseo PCB. The solder pads to use for the LED, the buttons, and ground connection are shown on [this image](images/DSC09627.jpg) - pictures for the Quadrante in images folder.
+3. Wire the custom PCB via the "Senseo Connections" header (angled pin headers recommended) to interface with the Senseo PCB. The solder pads to use for the LED, the buttons, and ground connection are shown on photos in the `images` folder, e.g., for the [Senseo Classic](images/DSC09627.jpg) and [Senseo Quadrante](images/SenseoQuadrante-PCB.jpg)
 4. Connect a simple push button (the configuration reset button) to J3 and hot clue in the [base of the Senseo housing](images/resetbutton.jpg).
 5. Connect the additional [power supply](images/DSC09646.jpg) to the Senseo power cable and wire to J4
 6. Prepare a [small cutout](images/tcrt-cutout.jpg) in the Senseo front and [hot clue from behind](images/DSC09604.jpg). Connect to the TCRT header
@@ -117,7 +117,7 @@ Please follow these instructions (last tested 2021-10-01):
    - Upload
    - Upload File System image
    - Monitor
-  
+
    If any of the steps ends in a connection error dis- and reconnect the USB cable.
    You were successful when the monitoring terminal shows the SenseoWifi firmware version.
    For initial hardware testing see below.
@@ -150,7 +150,7 @@ python3 ota_updater_202011.py -l 192.168.0.75 -u user -d password -t "homie/" -i
 
 If everything worked out your machine now communicates its status and accepts commands via MQTT.
 You are now ready to interact with the machine and integrate it with other systems.
-Please check the source code of `SenseoWifi.cpp` for details on states and commands. 
+Please check the source code of `SenseoWifi.cpp` for details on states and commands.
 
 ## Smart Home Integration
 
@@ -621,7 +621,7 @@ The following openHAB configuration allows integration of the Senseo machine wit
 
 The [expire binding](https://www.openhab.org/addons/bindings/expire1/) is recommended for debug-value.
 
-**Note:** Not updated to latest firmware changes. 
+**Note:** Not updated to latest firmware changes.
 
 openHAB things file `mqtt.things`:
 ```
