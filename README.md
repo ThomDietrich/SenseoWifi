@@ -31,6 +31,8 @@ This project is comatible with:
 - Philips Senseo HD7811
 - Philips Senseo HD7812
 - Philips Senseo HD7817
+- Philips Senseo HD7865 Quadrante
+- Philips Senseo HD7860 Quadrante
 - … and most probably all similar models with one LED and three buttons
 
 ![installation example inside the machine](images/DSC09604.jpg)
@@ -83,7 +85,7 @@ Assuming the Senseo machine is connected to power 24/7, the additional electroni
 
 1. Solder the custom PCB according to the schematics provided in the `SenseoWifi-PCB` folder (designed in [Fritzing](http://fritzing.org))
 2. Hot clue the custom PCB inside the Senseo machine in a free position [such as shown here](images/DSC09604.jpg)
-3. Wire the custom PCB via the "Senseo Connections" header (angled pin headers recommended) to interface with the Senseo PCB. The solder pads to use for the LED, the buttons, and ground connection are shown on [this image](images/DSC09627.jpg)
+3. Wire the custom PCB via the "Senseo Connections" header (angled pin headers recommended) to interface with the Senseo PCB. The solder pads to use for the LED, the buttons, and ground connection are shown on [this image](images/DSC09627.jpg) - pictures for the Quadrante in images folder.
 4. Connect a simple push button (the configuration reset button) to J3 and hot clue in the [base of the Senseo housing](images/resetbutton.jpg).
 5. Connect the additional [power supply](images/DSC09646.jpg) to the Senseo power cable and wire to J4
 6. Prepare a [small cutout](images/tcrt-cutout.jpg) in the Senseo front and [hot clue from behind](images/DSC09604.jpg). Connect to the TCRT header
