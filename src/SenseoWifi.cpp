@@ -13,6 +13,7 @@ Released under some license.
 #include "pins.h"
 #include "constants.h"
 #include "testIO.cpp"
+#include "HomeAssistant.h"
 
 SenseoLed mySenseoLed(ocSenseLedPin);
 SenseoSM mySenseoSM;
@@ -22,6 +23,7 @@ Cup myCup(cupDetectorPin);
 HomieNode senseoNode("machine", "senseo-wifi", "senseo-wifi");
 HomieSetting<bool> CupDetectorAvailableSetting("cupdetector", "Enable cup detection (TCRT5000)");
 HomieSetting<bool> BuzzerSetting("buzzer", "Enable buzzer sounds (no water, cup finished, ...)");
+HomieSetting<bool> PublishHomeAssistantDiscoveryConfig("homeassistantautodiscovery", "Publish HomeAssistant discovery config, ...)");
 
 /**
 * Called by the LED changed interrupt
@@ -217,6 +219,54 @@ void senseoStateEntryAction() {
   }
 }
 
+void publishHomeAssistandDiscoveryConfig()
+{
+    Homie.getLogger() << endl << "Creating HomeAssistant entities..." << endl;
+    HomeAssistantDiscovery ha; 
+
+    //binary_sensor
+    bool success = ha.publishBinarySensorConfig("Out Of Water","outOfWater",{{"icon", "mdi:water-off-outline"},{"device_class","problem"}});    
+    Homie.getLogger() << "OutOfWater: " << (success ? "success" : "failed") << endl;
+
+    if (CupDetectorAvailableSetting.get()) {
+        success = ha.publishBinarySensorConfig("Cup Available","cupAvailable",{{"icon", "mdi:coffee-outline"}});    
+        Homie.getLogger() << "cupAvailable: " << (success ? "success" : "failed") << endl;
+
+        success = ha.publishBinarySensorConfig("Cup Full","cupFull",{{"icon", "mdi:coffee"}});    
+        Homie.getLogger() << "cupFull: " << (success ? "success" : "failed") << endl;
+    }
+
+    //sensor
+    success = ha.publishSensorConfig("Brewed Size","brewedSize",{{"icon", "mdi:coffee-maker"}});    
+    Homie.getLogger() << "brewedSize: " << (success ? "success" : "failed") << endl;
+
+    success = ha.publishSensorConfig("Operating State","opState",{{"icon", "mdi:state-machine"}});    
+    Homie.getLogger() << "opState: " << (success ? "success" : "failed") << endl;
+
+    //debug sensor
+    success = ha.publishSensorConfig("Debug","debug",{{"icon","mdi:comment-text-multiple-outline"},{"entity_category","diagnostic"}});    
+    Homie.getLogger() << "debug: " << (success ? "success" : "failed") << endl;
+
+    success = ha.publishStatConfig("Rssi","signal",{{"icon","mdi:signal-cellular-2"},{"unit_of_measurement","%"},{"device_class","signal_strength"},{"entity_category","diagnostic"}});    
+    Homie.getLogger() << "rssi: " << (success ? "success" : "failed") << endl;
+
+    success = ha.publishStatConfig("Uptime","uptime",{{"icon","mdi:av-timer"},{"unit_of_measurement","s"}});    
+    Homie.getLogger() << "uptime: " << (success ? "success" : "failed") << endl;
+
+    //switch
+    success = ha.publishSwitchConfig("Power","power",{{"icon","mdi:power"}});    
+    Homie.getLogger() << "power: " << (success ? "success" : "failed") << endl;
+
+    //button
+    success = ha.publishButtonConfig("Brew Coffee Normal","brew","1cup",{{"icon","mdi:coffee"}});    
+    Homie.getLogger() << "brew 1cup: " << (success ? "success" : "failed") << endl;
+
+    success = ha.publishButtonConfig("Brew Coffee Double","brew","2cup",{{"icon","mdi:coffee"}});    
+    Homie.getLogger() << "brew 2cup: " << (success ? "success" : "failed") << endl;
+
+    Homie.getLogger() << endl;
+}
+
 /**
 * The device rebooted when attachInterrupt was called in setup()
 * before Wifi was connected and interrupts were already coming in.
@@ -231,6 +281,12 @@ void onHomieEvent(const HomieEvent &event) {
     break;
   default:
     break;
+  case HomieEventType::MQTT_READY:
+    if (PublishHomeAssistantDiscoveryConfig.get()) {
+      publishHomeAssistandDiscoveryConfig();
+    }
+    break;
+
   }
 }
 
@@ -347,6 +403,7 @@ void setup() {
   */
   CupDetectorAvailableSetting.setDefaultValue(true);
   BuzzerSetting.setDefaultValue(true);
+  PublishHomeAssistantDiscoveryConfig.setDefaultValue(false);
 
   /**
   * Homie: Advertise custom SenseoWifi MQTT topics
