@@ -14,11 +14,13 @@ Released under some license.
 #include "constants.h"
 #include "testIO.cpp"
 #include "HomeAssistant.h"
+#include <ezBuzzer.h>
 
 SenseoLed mySenseoLed(ocSenseLedPin);
 SenseoSM mySenseoSM;
 SenseoControl myControl(ocPressPowerPin, ocPressLeftPin, ocPressRightPin);
 Cup myCup(cupDetectorPin);
+ezBuzzer myBuzzer(beeperPin);
 
 HomieNode senseoNode("machine", "senseo-wifi", "senseo-wifi");
 HomieSetting<bool> CupDetectorAvailableSetting("cupdetector", "Enable cup detection (TCRT5000)");
@@ -81,6 +83,28 @@ bool brewHandler(const HomieRange& range, const String& value) {
   return true;
 }
 
+void buzz(const String &value) {
+  if (value == "tone1") tone(beeperPin, 4096, 300);
+  if (value == "tone2") tone(beeperPin, 2048, 300);
+  if (value == "tone3") tone(beeperPin, 1536, 300);
+  if (value == "tone4") tone(beeperPin, 1024, 300);
+  if (value == "melody1") {
+    static int melody1[] = { NOTE_C7 };
+    static int noteDurations1[] = { 2 };
+    myBuzzer.playMelody(melody1, noteDurations1, sizeof(noteDurations1) / sizeof(int));
+  }
+  if (value == "melody2") {
+    static int melody2[] = { NOTE_E5, NOTE_E5, NOTE_F5, NOTE_C5 };
+    static int noteDurations2[] = { 4, 8, 8, 2 };
+    myBuzzer.playMelody(melody2, noteDurations2, sizeof(noteDurations2) / sizeof(int));
+  }
+  if (value == "melody3") {
+    static int melody3[] = { NOTE_C4, NOTE_C5 };
+    static int noteDurations3[] = { 4, 8 };
+    myBuzzer.playMelody(melody3, noteDurations3, sizeof(noteDurations3) / sizeof(int));
+  }
+}
+
 /**
 * Called by Homie upon an MQTT message to '.../buzzer'.
 */
@@ -88,8 +112,8 @@ bool buzzerHandler(const HomieRange& range, const String& value) {
   /**
   * Catch incorrect messages
   */
-  if (value != "tone1" && value !="tone2" && value !="tone3" && value !="tone4") {
-    senseoNode.setProperty("debug").send("buzzer: malformed message content. Allowed: [tone1,tone2,tone3,tone4].");
+  if (value != "tone1" && value !="tone2" && value !="tone3" && value !="tone4" && value !="melody1" && value !="melody2" && value !="melody3") {
+    senseoNode.setProperty("debug").send("buzzer: malformed message content. Allowed: [tone1,tone2,tone3,tone4,melody1,melody2,melody3].");
     return false;
   }
 
@@ -99,10 +123,7 @@ bool buzzerHandler(const HomieRange& range, const String& value) {
   }
 
   senseoNode.setProperty("buzzer").send(value);
-  if (value == "tone1") tone(beeperPin, 4096, 300);
-  if (value == "tone2") tone(beeperPin, 2048, 300);
-  if (value == "tone3") tone(beeperPin, 1536, 300);
-  if (value == "tone4") tone(beeperPin, 1024, 300);
+  buzz(value);  
   senseoNode.setProperty("buzzer").send("");
   return true;
 }
@@ -118,6 +139,7 @@ void senseoStateExitAction() {
   );
   switch (mySenseoSM.getStatePrev()) {
     case SENSEO_OFF: {
+      if (BuzzerSetting.get()) buzz("melody3");
       senseoNode.setProperty("power").send("true");
       senseoNode.setProperty("outOfWater").send("false");
       senseoNode.setProperty("brew").send("false");
@@ -192,7 +214,7 @@ void senseoStateEntryAction() {
       break;
     }
     case SENSEO_READY: {
-      if (BuzzerSetting.get()) tone(beeperPin, 1536, 500);
+      if (BuzzerSetting.get()) buzz("melody1");
       break;
     }
     case SENSEO_BREWING: {
@@ -209,7 +231,7 @@ void senseoStateEntryAction() {
       break;
     }
     case SENSEO_NOWATER: {
-      if (BuzzerSetting.get()) tone(beeperPin, 4096, 1800);
+      if (BuzzerSetting.get()) buzz("melody2");
       senseoNode.setProperty("outOfWater").send("true");
       break;
     }
@@ -353,6 +375,7 @@ void loopHandler() {
   * Check for a simulated button press - release after > 100ms
   */
   myControl.releaseIfPressed();
+  myBuzzer.loop();
 }
 
 void setup() {
