@@ -31,23 +31,11 @@ bool HomeAssistantDiscovery::publishBinarySensorConfig(const char * friendlyName
 {
     DynamicJsonDocument jsonPayload(1024);
     
-    //jsonPayload["name"] = String(Homie.getConfiguration().name) + String(" ") + String(friendlyName);
     preparePayload(jsonPayload,friendlyName,topicName,attributes);
 
     jsonPayload["state_topic"] = machineTopic + String(topicName);
     jsonPayload["payload_off"] = "false";
     jsonPayload["payload_on"] = "true";
-    
-    /*jsonPayload["availability_topic"] = availabilityTopic.c_str();
-    jsonPayload["payload_available"] = "ready";
-    jsonPayload["payload_not_available"] = "lost";
-    
-    if (deviceClass != nullptr){
-        jsonPayload["device_class"] = deviceClass;
-    }
-    if (iconName != nullptr){
-        jsonPayload["icon"] = iconName;
-    }*/
 
     char payloadBuffer[1024];
     size_t payloadSize = serializeJson(jsonPayload,payloadBuffer);
