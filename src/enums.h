@@ -4,24 +4,14 @@
   Released under some license.
 */
 
-#ifndef SenseoEnums_h
-#define SenseoEnums_h
+#pragma once
 
-enum ledStateEnum {
-  LED_unknown,
-  LED_OFF,
-  LED_SLOW,
-  LED_FAST,
-  LED_ON
+enum senseoStateEnum
+{
+    SENSEO_unknown,
+    SENSEO_OFF,
+    SENSEO_HEATING,
+    SENSEO_READY,
+    SENSEO_BREWING,
+    SENSEO_NOWATER
 };
-
-enum senseoStateEnum {
-  SENSEO_unknown,
-  SENSEO_OFF,
-  SENSEO_HEATING,
-  SENSEO_READY,
-  SENSEO_BREWING,
-  SENSEO_NOWATER
-};
-
-#endif

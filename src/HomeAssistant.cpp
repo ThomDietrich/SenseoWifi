@@ -1,3 +1,4 @@
+#include <Homie.h>
 #include "HomeAssistant.h"
 
 HomeAssistantDiscovery::HomeAssistantDiscovery()
@@ -22,7 +23,8 @@ void HomeAssistantDiscovery::preparePayload(DynamicJsonDocument & jsonPayload, c
     jsonPayload["payload_available"] = "ready";
     jsonPayload["payload_not_available"] = "lost";
 
-    for(auto attribute: attributes) {
+    for(auto attribute: attributes) 
+    {
         jsonPayload[attribute.first] = attribute.second;
     }
 }
