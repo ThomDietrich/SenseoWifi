@@ -336,10 +336,10 @@ void setupHandler()
 
         // Senseo Reset
         myInputbuttons->addButtonHoldHandler(A0buttonPwr1Cup2Cup, 2000, []() { EXECUTE_IF_COMPONENT_EXIST(mySenseo, BuzzerComponent, playMelody("beep")); });
-        myInputbuttons->addButtonHoldHandler(A0buttonPwr1Cup2Cup, 3000, []() { EXECUTE_IF_COMPONENT_EXIST(mySenseo, BuzzerComponent, playMelody("beep")); });
         myInputbuttons->addButtonHoldHandler(A0buttonPwr1Cup2Cup, 4000, []() { EXECUTE_IF_COMPONENT_EXIST(mySenseo, BuzzerComponent, playMelody("beep")); });
-        myInputbuttons->addButtonReleaseHandler(A0buttonPwr1Cup2Cup, 4000, []() { Homie.reset(); });
-        // myInputbuttons->addButtonReleaseHandler(A0buttonPwr1Cup2Cup,000,[]() { Homie.getLogger() << "Reset Canceled" << endl; });
+        myInputbuttons->addButtonHoldHandler(A0buttonPwr1Cup2Cup, 6000, []() { EXECUTE_IF_COMPONENT_EXIST(mySenseo, BuzzerComponent, playMelody("beep")); });
+        myInputbuttons->addButtonReleaseHandler(A0buttonPwr1Cup2Cup, 6000, []() { Homie.reset(); });
+        // myInputbuttons->addButtonReleaseHandler(A0buttonPwr1Cup2Cup,2000,[]() { Homie.getLogger() << "Reset Canceled" << endl; });
 
         // 1 cup
         myInputbuttons->addButtonReleaseHandler(A0button1Cup, 50, []() { brewCup(CommandComponent::Brew1Cup); });
