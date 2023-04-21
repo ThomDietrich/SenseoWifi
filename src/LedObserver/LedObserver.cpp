@@ -61,6 +61,7 @@ void LedObserver::updateState()
     interrupts();
 
     ledStateEnum ledStatePrev = ledState;
+
     // Check if the led change since our last update
     if (ledChangeMillis >= lastUpdateMillis)
     {
@@ -71,26 +72,36 @@ void LedObserver::updateState()
         // decide if LED is blinking fast or slow
         if (abs(pulseDuration - pulseDurLedFast) < pulseDurTolerance)
         {
-            ledState = LED_FAST;
+            numberOfConsecutiveLedFast++;
+            // Every few hours I have some rogue inputs that trigger the interrupt. Maybe some kind of interference caused by the breadboard
+            // And when I get really unlucky those rogue inputs last exactly 100ms, this test should filter them out
+            if (numberOfConsecutiveLedFast > 2)
+                ledState = LED_FAST;
         }
-        else if (abs(pulseDuration - pulseDurLedSlow) < pulseDurTolerance)
+        else 
         {
-            ledState = LED_SLOW;
-        }
-        else
-        {
-            // Nothing to do here.
-            // pulseDuration could be below (user interaction) or above (end of a continuous state) the known times.
-            // No actions needed.
+            numberOfConsecutiveLedFast = 0;
+            if (abs(pulseDuration - pulseDurLedSlow) < pulseDurTolerance)
+            {
+                ledState = LED_SLOW;
+            }
+            else
+            {
+                // Nothing to do here.
+                // pulseDuration could be below (user interaction) or above (end of a continuous state) the known times.
+                // No actions needed.
+            }
         }
         lastPulseDuration = pulseDuration;
     }
+
     // decide if LED is not blinking but in a continuous state
     // this should be safe in case of very long frame because ledChangeMillis is updated from the interrupt (which will kick on many time during this long frame)
     int t = now - ledChangeMillis;
     if ((t > pulseContThreshold) && (t < 3 * pulseContThreshold || ledState == LED_unknown)) //When the machine start, it could happen that the first "pulse" was longer than pulseContThreshold
     {
         ledState = !digitalRead(ledPin) ? LED_ON : LED_OFF;
+        numberOfConsecutiveLedFast = 0;
     }
 
     if (ledStatePrev != ledState)

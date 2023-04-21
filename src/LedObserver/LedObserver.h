@@ -28,6 +28,7 @@ private:
 
     int ledPin;
     unsigned long lastUpdateMillis = 0;
+    unsigned long numberOfConsecutiveLedFast = 0;
     int lastPulseDuration = 0;
     ledStateEnum ledState = LED_unknown;    
     HomieNode &senseoNode;
