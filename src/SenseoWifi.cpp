@@ -74,28 +74,24 @@ bool powerHandler(const HomieRange &range, const String &value)
     return true;
 }
 
-bool program1CupHandler(const HomieRange &range, const String &value)
+bool programHandler(const HomieRange &range, const String &value)
 {
-    if (value == "true")
+    if (value == "1cup")
     {
-        EXECUTE_IF_COMPONENT_EXIST(mySenseo, ProgramComponent, requestProgram(ProgramComponent::oneCup));
+        EXECUTE_IF_COMPONENT_EXIST(mySenseo, ProgramComponent, requestProgram(ProgramComponent::oneCup,false));
+    }
+    else if (value == "2cup")
+    {
+        EXECUTE_IF_COMPONENT_EXIST(mySenseo, ProgramComponent, requestProgram(ProgramComponent::twoCup,false));
+    }
+    else if (value == "clear")
+    {
+        EXECUTE_IF_COMPONENT_EXIST(mySenseo, ProgramComponent, clearProgram());
     }
     else
     {
-        EXECUTE_IF_COMPONENT_EXIST(mySenseo, ProgramComponent, clearProgram(ProgramComponent::oneCup));
-    }
-    return true;
-}
-
-bool program2CupHandler(const HomieRange &range, const String &value)
-{
-    if (value == "true")
-    {
-        EXECUTE_IF_COMPONENT_EXIST(mySenseo, ProgramComponent, requestProgram(ProgramComponent::twoCup));
-    }
-    else
-    {
-        EXECUTE_IF_COMPONENT_EXIST(mySenseo, ProgramComponent, clearProgram(ProgramComponent::twoCup));
+        senseoNode.setProperty("debug").send("program: malformed message content. Allowed: [1cup,2cup,clear].");
+        return false;
     }
     return true;
 }
@@ -199,6 +195,14 @@ void publishHomeAssistandDiscoveryConfig()
         Homie.getLogger() << "cupFull: " << (success ? "success" : "failed") << endl;
     }
 
+    if (useCustomizableButtonsAddon)
+    {
+        // json_attributes_topic let you add attributes to an entity based on another topic containing the attribute json formated
+        String topicAttributes = ha.getMachineTopic() + "programContext";
+        success = ha.publishBinarySensorConfig("Has Program", "hasProgram", {{"icon", "mdi:coffee-to-go"}, {"json_attributes_topic", topicAttributes.c_str()} });
+        Homie.getLogger() << "hasProgram: " << (success ? "success" : "failed") << endl;
+    }
+
     // sensor
     success = ha.publishSensorConfig("Brewed Size", "brewedSize", {{"icon", "mdi:coffee-maker"}});
     Homie.getLogger() << "brewedSize: " << (success ? "success" : "failed") << endl;
@@ -222,13 +226,6 @@ void publishHomeAssistandDiscoveryConfig()
     // switch
     success = ha.publishSwitchConfig("Power", "power", {{"icon", "mdi:power"}});
     Homie.getLogger() << "power: " << (success ? "success" : "failed") << endl;
-    if (useCustomizableButtonsAddon)
-    {
-        success = ha.publishSwitchConfig("Program 1 Cup", "program1Cup", {{"icon", "mdi:coffee"}});
-        Homie.getLogger() << "program1Cup: " << (success ? "success" : "failed") << endl;
-        success = ha.publishSwitchConfig("Program 2 Cups", "program2Cup", {{"icon", "mdi:coffee"}});
-        Homie.getLogger() << "program2Cup: " << (success ? "success" : "failed") << endl;
-    }
 
     // button
     success = ha.publishButtonConfig("Brew Coffee Normal", "brew", "1cup", {{"icon", "mdi:coffee"}});
@@ -236,6 +233,12 @@ void publishHomeAssistandDiscoveryConfig()
 
     success = ha.publishButtonConfig("Brew Coffee Double", "brew", "2cup", {{"icon", "mdi:coffee"}});
     Homie.getLogger() << "brew 2cup: " << (success ? "success" : "failed") << endl;
+
+    if (useCustomizableButtonsAddon)
+    {
+        success = ha.publishButtonConfig("Clear Program", "program", "clear", {{"icon", "mdi:coffee-off"}});
+        Homie.getLogger() << "program clear: " << (success ? "success" : "failed") << endl;
+    }
 
     Homie.getLogger() << endl;
 }
@@ -282,7 +285,7 @@ void togglePower()
         mySenseo.sendCommands(CommandComponent::TurnOff);
 }
 
-void holdCupButtonHandler(ProgramComponent::Program program)
+void holdCupButtonHandler(ProgramComponent::Program program,bool powerButtonPressed)
 {
     if (mySenseo.isOff())
     {
@@ -292,7 +295,7 @@ void holdCupButtonHandler(ProgramComponent::Program program)
         if (programComponent && ledComponent)
         {
             ledComponent->burst({100, 100, 100, 100, 100});
-            programComponent->requestProgram(program);
+            programComponent->requestProgram(program,powerButtonPressed);
         }
     }
 }
@@ -306,7 +309,7 @@ void holdPowerButtonHandler()
         // I should not reach that code path without those component since the function is only called if the CustomizableButtonAddon has been detected
         if (programComponent && ledComponent)
         {
-            programComponent->clearProgram(ProgramComponent::all);
+            programComponent->clearProgram();
             ledComponent->burst({100, 100, 100, 100, 100});
             EXECUTE_IF_COMPONENT_EXIST(mySenseo, BuzzerComponent, playMelody("beep"));
         }
@@ -343,12 +346,14 @@ void setupHandler()
 
         // 1 cup
         myInputbuttons->addButtonReleaseHandler(A0button1Cup, 50, []() { brewCup(CommandComponent::Brew1Cup); });
-        myInputbuttons->addButtonHoldHandler(A0button1Cup, 2000, []() { holdCupButtonHandler(ProgramComponent::oneCup); });
+        myInputbuttons->addButtonHoldHandler(A0button1Cup, 2000, []() { holdCupButtonHandler(ProgramComponent::oneCup,false); });
+        myInputbuttons->addButtonHoldHandler(A0buttonPwr1Cup, 2000, []() { holdCupButtonHandler(ProgramComponent::oneCup,true); });
         myInputbuttons->addButtonReleaseHandler(A0button1Cup, 1000, []() {}); // this one is to prevent the BrewCup release to trigger
 
         // 2 cup
         myInputbuttons->addButtonReleaseHandler(A0button2Cup, 50, []() { brewCup(CommandComponent::Brew2Cup); });
-        myInputbuttons->addButtonHoldHandler(A0button2Cup, 2000, []() { holdCupButtonHandler(ProgramComponent::twoCup); });
+        myInputbuttons->addButtonHoldHandler(A0button2Cup, 2000, []() { holdCupButtonHandler(ProgramComponent::twoCup,false); });
+        myInputbuttons->addButtonHoldHandler(A0buttonPwr2Cup, 2000, []() { holdCupButtonHandler(ProgramComponent::twoCup,true); });
         myInputbuttons->addButtonReleaseHandler(A0button2Cup, 1000, []() {}); // this one is to prevent the BrewCup release to trigger
     }
 
@@ -433,8 +438,11 @@ void setup()
     senseoNode.advertise("outOfWater").setName("Out of Water").setDatatype("boolean");
     senseoNode.advertise("cupAvailable").setName("Cup Available");
     senseoNode.advertise("cupFull").setName("Cup Full");
-    senseoNode.advertise("program1Cup").setName("Program1Cup").setDatatype("boolean").settable(program1CupHandler);
-    senseoNode.advertise("program2Cup").setName("Program2Cup").setDatatype("boolean").settable(program2CupHandler);
+
+    senseoNode.advertise("program").setName("Program").settable(programHandler).setDatatype("enum").setFormat("1,2,clear");
+    senseoNode.advertise("hasProgram").setName("Has Program").setDatatype("boolean");
+    senseoNode.advertise("programContext").setName("Program Context").setDatatype("string");
+    
     senseoNode.advertise("buttonsAddon").setName("Use Customizable Buttons Addon").setDatatype("boolean");
 
     Homie.onEvent(onHomieEvent);

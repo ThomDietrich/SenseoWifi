@@ -2,34 +2,32 @@
 #include "programComponent.h"
 #include <Homie.h>
 
-void ProgramComponent::clearProgram(Program program)
+ProgramComponent::ProgramComponent(HomieNode & node) 
+: senseoNode(node) 
 {
-    if (program == all || program == oneCup)
-    {
-        programOneCup = false;
-        senseoNode.setProperty("program1Cup").send("false");
-    }
-    if (program == all || program == twoCup)
-    {
-        programTwoCup = false;
-        senseoNode.setProperty("program2Cup").send("false");
-    }
+    clearProgram();
+}
+
+void ProgramComponent::clearProgram()
+{
+    hasProgram = false;
+    senseoNode.setProperty("hasProgram").send("false");        
+    senseoNode.setProperty("programContext").send("");
 }
         
-void ProgramComponent::requestProgram(Program program)
+void ProgramComponent::requestProgram(Program program,bool powerPressed)
 {
-    if (program == oneCup)
-    {
-        programOneCup = true;
-        programTwoCup = false;
-        senseoNode.setProperty("program1Cup").send("true");        
-        senseoNode.setProperty("program2Cup").send("false");
-    }
-    if (program == twoCup)
-    {
-        programOneCup = false;
-        programTwoCup = true;
-        senseoNode.setProperty("program1Cup").send("false");
-        senseoNode.setProperty("program2Cup").send("true");
-    }
+    DynamicJsonDocument jsonContext(1024);
+    if (program == oneCup) jsonContext["cup_size"] = "1";
+    else if (program == twoCup) jsonContext["cup_size"] = "2";
+
+    if (powerPressed) jsonContext["power_pressed"] = "true";
+    else jsonContext["power_pressed"] = "false";
+
+    String jsonString;
+    serializeJson(jsonContext,jsonString);
+
+    hasProgram = true;
+    senseoNode.setProperty("hasProgram").send("true");        
+    senseoNode.setProperty("programContext").send(jsonString);
 }

@@ -17,6 +17,8 @@ public:
     bool publishSwitchConfig(const char *friendlyName, const char *topicName, const std::map<String, String> &attributes);
     bool publishButtonConfig(const char *friendlyName, const char *topicName, const char *buttonPayload, const std::map<String, String> &attributes);
 
+    const String & getMachineTopic() const { return machineTopic; }
+
 private:
     void preparePayload(DynamicJsonDocument &jsonPayload, const char *friendlyName, const char *topicName, const std::map<String, String> &attributes);
 

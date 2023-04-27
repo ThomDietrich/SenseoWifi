@@ -16,16 +16,14 @@ class ProgramComponent : public  FsmComponent<ProgramComponent>
         {
             oneCup,
             twoCup,
-            all
         };
 
-        void clearProgram(Program program);
-        void requestProgram(Program program);
-        bool hasAnyProgram() { return programOneCup || programTwoCup; }
+        void clearProgram();
+        void requestProgram(Program program,bool powerPressed);
+        bool hasProgramPending() const { return hasProgram; }
   
-        ProgramComponent(HomieNode & node) : senseoNode(node) {}
+        ProgramComponent(HomieNode & node);
     private:
         HomieNode & senseoNode; 
-        bool programOneCup = false;
-        bool programTwoCup = false;
+        bool hasProgram = false;
 };

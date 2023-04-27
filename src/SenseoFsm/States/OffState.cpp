@@ -40,7 +40,7 @@ void OffState::onUpdate()
     }
     else if (programComponent != nullptr && ! hasProcessedCommands(CommandComponent::TurnOn))
     {
-        if (programComponent->hasAnyProgram())
+        if (programComponent->hasProgramPending())
         {
             EXECUTE_IF_COMPONENT_EXIST(SenseoLedComponent,blink(500,30000));
         }
