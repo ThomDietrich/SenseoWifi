@@ -14,11 +14,13 @@ void ReadyState::onEnter(StateId previousState)
 {
     EXECUTE_IF_COMPONENT_EXIST(SenseoLedComponent,turnOn());
     waitingForACup = false;
+    lastLedBurst = millis();
 }
 
 void ReadyState::processBrewingCommand(CommandComponent::Command command)
 {
     assert(command == CommandComponent::Brew1Cup || command == CommandComponent::Brew2Cup);
+    unsigned long now = millis();
 
     // Let's check if we have a cup in place
     if (cupComponent == nullptr || (cupComponent->isAvailable() && !cupComponent->isFull()))
@@ -29,7 +31,12 @@ void ReadyState::processBrewingCommand(CommandComponent::Command command)
 
         processCommands(command);
         changeState<BrewingState>();  
-    }   
+    }
+    else if (waitingForACup && now - lastLedBurst > 2000)   
+    {
+        lastLedBurst = now;
+        EXECUTE_IF_COMPONENT_EXIST(SenseoLedComponent,burst({100, 100, 100, 100, 100, 100, 100, 100, 100, 100}));
+    }
     else if (!waitingForACup)
     {
         Homie.getLogger() << "Waiting for a cup" << endl;

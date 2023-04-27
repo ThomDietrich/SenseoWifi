@@ -14,5 +14,6 @@ class ReadyState : public SenseoState
     protected:
         void processBrewingCommand(CommandComponent::Command command);
         bool waitingForACup = false;
+        unsigned long lastLedBurst = 0;
         bool useCustomizableButtonAddon;
 };
