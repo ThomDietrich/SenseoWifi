@@ -88,6 +88,33 @@ SenseoInputButtons::ButtonHandler SenseoInputButtons::findBestReleaseHandler(int
         return nullptr;
 }
 
+void SenseoInputButtons::testIO(int analogPin)
+{    
+    static unsigned long lastReadingTime = 0;
+    static int previousReading = 0;
+    static bool hasConfigurePin = false;
+
+    if (!hasConfigurePin)
+    {
+        pinMode(analogPin, INPUT);
+        hasConfigurePin = true;
+    }
+
+    if (millis() - lastReadingTime < 10)
+        return; // too much reading of A0 break the wifi
+
+    int reading = analogRead(analogPin);
+    lastReadingTime = millis();
+
+    if (reading != previousReading)
+    {
+        Serial.print("Input value = ");
+        Serial.print(reading);
+        Serial.println();
+        previousReading = reading;
+    }    
+}
+
 void SenseoInputButtons::update()
 {
     if (millis() - lastReadingTime < 10)

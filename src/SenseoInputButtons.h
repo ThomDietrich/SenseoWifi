@@ -23,6 +23,8 @@ public:
 
     SenseoInputButtons(int analogPin);
 
+    static void testIO(int analogPin);
+
     void addButtonPushHandler(int buttonValue, const ButtonHandler &handler);
     void addButtonHoldHandler(int buttonValue, unsigned long time, const ButtonHandler &handler);
     void addButtonReleaseHandler(int buttonValue, unsigned long time, const ButtonHandler &handler);
