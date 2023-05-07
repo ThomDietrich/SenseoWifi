@@ -51,7 +51,7 @@ void BrewingState::onUpdate()
 
 void BrewingState::onExit(StateId nextState) 
 {
-    EXECUTE_IF_COMPONENT_EXIST(BuzzerComponent,playMelody("cupready"));
+    EXECUTE_IF_COMPONENT_EXIST(BuzzerComponent,playMelody("cupReady"));
     senseoNode.setProperty("brew").send("false");
 
     int brewedSize = 0;    
