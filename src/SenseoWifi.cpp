@@ -37,6 +37,7 @@ HomieSetting<bool> CupDetectorAvailableSetting("cupdetector", "Enable cup detect
 HomieSetting<bool> BuzzerSetting("buzzer", "Enable buzzer sounds (no water, cup finished, ...)");
 HomieSetting<bool> PublishHomeAssistantDiscoveryConfig("homeassistantautodiscovery", "Publish HomeAssistant discovery config, ...)");
 bool useCustomizableButtonsAddon = false;
+IPAddress myIP = IPAddress(0,0,0,0);
 
 SenseoFsm mySenseo(senseoNode);
 // HwTimerLedObserver mySenseoLed(senseoNode,ocSenseLedPin);
@@ -252,6 +253,16 @@ void onHomieEvent(const HomieEvent &event)
     switch (event.type)
     {
     case HomieEventType::WIFI_CONNECTED:
+        // If myIP is set, this is not the first time the wifi is connected
+        if (myIP != IPAddress(0,0,0,0)) 
+        {
+            // With AsyncMqttClient 0.9.0, Homie can't reconnect to MQTT after a wifi disconnection
+            // Unfortunately 0.8.2 (which is the version packaged with Homie), has a mqtt max payload size to low for sending Home Assistant Autodiscovery config
+            // This is clearly a bad workaround but I have nothing better yet
+            Serial.println("We lost Wifi Connection during Operation. The Esp need to reboot");
+            Homie.reboot();
+        }
+        myIP = event.ip;
         mySenseoLed.attachInterrupt();
         break;
     case HomieEventType::WIFI_DISCONNECTED:
