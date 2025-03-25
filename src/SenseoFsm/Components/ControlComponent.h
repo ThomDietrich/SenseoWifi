@@ -3,32 +3,28 @@
   Created by Thomas Dietrich, 2016-03-05.
   Released under some license.
 */
-#ifndef SenseoControl_h
-#define SenseoControl_h
+#pragma once
 
-#include "Homie.h"
-#include "enums.h"
-#include "constants.h"
+#include "ModularFsm/FsmComponent.h"
 
 /**
  * SenseoControl includes all functions hardware control specific.
  * At the time of this writing, this is mainly "pressing" the buttons.
  */
-class SenseoControl
+class ControlComponent : public FsmComponent<ControlComponent>
 {
-  public:
-    SenseoControl(int pBPin, int lBPin, int rBPin);
+public:
+    ControlComponent(int pBPin, int lBPin, int rBPin);
     void pressPowerButton();
     void pressLeftButton();
     void pressRightButton();
     void pressLeftRightButton();
-    void releaseIfPressed();
-  private:
+    void update();
+
+private:
     /** The time one/the last button was pressed. '0' means no button is currently pressed */
     unsigned long timestampPressed = 0;
     int powerButtonPin;
     int leftButtonPin;
     int rightButtonPin;
 };
-
-#endif
